@@ -33,9 +33,24 @@ abstract class BaseScraper implements SupermarketScraperInterface
     protected LoggerInterface $logger;
 
     /**
+     * Error logger instance.
+     */
+    protected LoggerInterface $errorLogger;
+
+    /**
+     * Debug logger instance.
+     */
+    protected LoggerInterface $debugLogger;
+
+    /**
      * Timestamp of last API request for rate limiting.
      */
     protected ?int $lastRequestTime = null;
+
+    /**
+     * Current scrape run ID for context.
+     */
+    protected ?int $scrapeRunId = null;
 
     /**
      * Create a new BaseScraper instance.
@@ -46,6 +61,19 @@ abstract class BaseScraper implements SupermarketScraperInterface
     {
         $this->config = $config;
         $this->logger = Log::channel('scraper');
+        $this->errorLogger = Log::channel('scraper-errors');
+        $this->debugLogger = Log::channel('scraper-debug');
+    }
+
+    /**
+     * Set the current scrape run ID for logging context.
+     *
+     * @param int|null $scrapeRunId Scrape run ID
+     * @return void
+     */
+    public function setScrapeRunId(?int $scrapeRunId): void
+    {
+        $this->scrapeRunId = $scrapeRunId;
     }
 
     /**
@@ -57,20 +85,36 @@ abstract class BaseScraper implements SupermarketScraperInterface
      */
     protected function get(string $path, array $params = []): ?array
     {
-        return $this->retryWithBackoff(function () use ($path, $params) {
+        $url = $this->buildUrl($path);
+
+        $this->log('info', "Starting GET request", [
+            'endpoint' => $path,
+            'url' => $url,
+            'params' => $params,
+        ]);
+
+        $result = $this->retryWithBackoff(function () use ($path, $params, $url) {
             $this->applyRateLimit();
 
             $client = $this->createHttpClient();
-            $url = $this->buildUrl($path);
 
-            $this->log('debug', "GET request to {$url}", ['params' => $params]);
+            $this->logDebug("Executing GET request to {$url}", ['params' => $params]);
 
             $response = $client->get($url, $params);
 
             $this->lastRequestTime = time();
 
-            return $this->handleResponse($response, 'GET', $url);
+            return $this->handleResponse($response, 'GET', $url, $path);
         });
+
+        if ($result !== null) {
+            $this->log('info', "GET request completed successfully", [
+                'endpoint' => $path,
+                'url' => $url,
+            ]);
+        }
+
+        return $result;
     }
 
     /**
@@ -82,20 +126,35 @@ abstract class BaseScraper implements SupermarketScraperInterface
      */
     protected function post(string $path, array $data = []): ?array
     {
-        return $this->retryWithBackoff(function () use ($path, $data) {
+        $url = $this->buildUrl($path);
+
+        $this->log('info', "Starting POST request", [
+            'endpoint' => $path,
+            'url' => $url,
+        ]);
+
+        $result = $this->retryWithBackoff(function () use ($path, $data, $url) {
             $this->applyRateLimit();
 
             $client = $this->createHttpClient();
-            $url = $this->buildUrl($path);
 
-            $this->log('debug', "POST request to {$url}", ['data' => $data]);
+            $this->logDebug("Executing POST request to {$url}", ['data' => $data]);
 
             $response = $client->post($url, $data);
 
             $this->lastRequestTime = time();
 
-            return $this->handleResponse($response, 'POST', $url);
+            return $this->handleResponse($response, 'POST', $url, $path);
         });
+
+        if ($result !== null) {
+            $this->log('info', "POST request completed successfully", [
+                'endpoint' => $path,
+                'url' => $url,
+            ]);
+        }
+
+        return $result;
     }
 
     /**
@@ -114,7 +173,7 @@ abstract class BaseScraper implements SupermarketScraperInterface
 
         if ($elapsedMs < $delayMs) {
             $sleepMs = $delayMs - $elapsedMs;
-            $this->log('debug', "Rate limiting: sleeping for {$sleepMs}ms");
+            $this->logDebug("Rate limiting: sleeping for {$sleepMs}ms");
             usleep((int) ($sleepMs * 1000));
         }
     }
@@ -138,7 +197,7 @@ abstract class BaseScraper implements SupermarketScraperInterface
                 $attempt++;
 
                 if ($attempt >= $maxAttempts) {
-                    $this->log('error', 'Max retry attempts reached for rate limit', [
+                    $this->logError('Max retry attempts reached for rate limit', [
                         'attempts' => $attempt,
                         'error' => $e->getMessage(),
                     ]);
@@ -148,9 +207,10 @@ abstract class BaseScraper implements SupermarketScraperInterface
 
                 // Exponential backoff: 2^attempt seconds
                 $backoffSeconds = 2 ** $attempt;
-                $this->log('warning', "Rate limited, retrying in {$backoffSeconds}s", [
+                $this->log('warning', "Rate limited, retrying in {$backoffSeconds}s (attempt {$attempt}/{$maxAttempts})", [
                     'attempt' => $attempt,
                     'max_attempts' => $maxAttempts,
+                    'backoff_seconds' => $backoffSeconds,
                 ]);
 
                 sleep($backoffSeconds);
@@ -158,9 +218,10 @@ abstract class BaseScraper implements SupermarketScraperInterface
                 $attempt++;
 
                 if ($attempt >= $maxAttempts) {
-                    $this->log('error', 'Max retry attempts reached', [
+                    $this->logError('Max retry attempts reached', [
                         'attempts' => $attempt,
                         'error' => $e->getMessage(),
+                        'exception_class' => get_class($e),
                     ]);
 
                     return null;
@@ -168,17 +229,20 @@ abstract class BaseScraper implements SupermarketScraperInterface
 
                 // Exponential backoff for API errors
                 $backoffSeconds = 2 ** $attempt;
-                $this->log('warning', "API error, retrying in {$backoffSeconds}s", [
+                $this->log('warning', "API error, retrying in {$backoffSeconds}s (attempt {$attempt}/{$maxAttempts})", [
                     'attempt' => $attempt,
                     'max_attempts' => $maxAttempts,
+                    'backoff_seconds' => $backoffSeconds,
                     'error' => $e->getMessage(),
                 ]);
 
                 sleep($backoffSeconds);
             } catch (\Exception $e) {
-                $this->log('error', 'Unexpected error during request', [
+                $this->logError('Unexpected error during request', [
                     'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
+                    'exception_class' => get_class($e),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
                 ]);
 
                 return null;
@@ -203,12 +267,64 @@ abstract class BaseScraper implements SupermarketScraperInterface
             'timestamp' => now()->toIso8601String(),
         ], $context);
 
-        // Only log debug messages if debug mode is enabled
-        if ($level === 'debug' && ! config('scrapers.debug', false)) {
-            return;
+        // Add scrape_run_id if available
+        if ($this->scrapeRunId !== null) {
+            $context['scrape_run_id'] = $this->scrapeRunId;
         }
 
         $this->logger->log($level, $message, $context);
+
+        // Also log errors to the error channel
+        if ($level === 'error') {
+            $this->errorLogger->error($message, $context);
+        }
+    }
+
+    /**
+     * Log debug message (only when SCRAPER_DEBUG=true).
+     *
+     * @param string $message Log message
+     * @param array<string, mixed> $context Additional context
+     * @return void
+     */
+    protected function logDebug(string $message, array $context = []): void
+    {
+        if (! config('scrapers.debug', false)) {
+            return;
+        }
+
+        $context = array_merge([
+            'supermarket' => $this->getIdentifier(),
+            'timestamp' => now()->toIso8601String(),
+        ], $context);
+
+        if ($this->scrapeRunId !== null) {
+            $context['scrape_run_id'] = $this->scrapeRunId;
+        }
+
+        $this->debugLogger->debug($message, $context);
+    }
+
+    /**
+     * Log error message to both scraper and scraper-errors channels.
+     *
+     * @param string $message Log message
+     * @param array<string, mixed> $context Additional context
+     * @return void
+     */
+    protected function logError(string $message, array $context = []): void
+    {
+        $context = array_merge([
+            'supermarket' => $this->getIdentifier(),
+            'timestamp' => now()->toIso8601String(),
+        ], $context);
+
+        if ($this->scrapeRunId !== null) {
+            $context['scrape_run_id'] = $this->scrapeRunId;
+        }
+
+        $this->logger->error($message, $context);
+        $this->errorLogger->error($message, $context);
     }
 
     /**
@@ -243,66 +359,75 @@ abstract class BaseScraper implements SupermarketScraperInterface
      * @param Response $response HTTP response
      * @param string $method HTTP method
      * @param string $url Request URL
+     * @param string $endpoint API endpoint path
      * @return array<string, mixed>|null Response data or null on failure
      * @throws ApiRateLimitException If rate limited
      * @throws ApiException If API error occurs
      */
-    protected function handleResponse(Response $response, string $method, string $url): ?array
+    protected function handleResponse(Response $response, string $method, string $url, string $endpoint): ?array
     {
+        $statusCode = $response->status();
+
         // Handle rate limiting
-        if ($response->status() === 429) {
+        if ($statusCode === 429) {
             $this->log('warning', 'Rate limit exceeded', [
                 'method' => $method,
                 'url' => $url,
-                'status' => $response->status(),
+                'endpoint' => $endpoint,
+                'status_code' => $statusCode,
             ]);
 
             throw new ApiRateLimitException('Rate limit exceeded');
         }
 
         // Handle authentication errors
-        if (in_array($response->status(), [401, 403])) {
-            $this->log('error', 'Authentication failed', [
+        if (in_array($statusCode, [401, 403])) {
+            $this->logError('Authentication failed', [
                 'method' => $method,
                 'url' => $url,
-                'status' => $response->status(),
+                'endpoint' => $endpoint,
+                'status_code' => $statusCode,
             ]);
 
-            throw new ApiException("Authentication failed: {$response->status()}");
+            throw new ApiException("Authentication failed: {$statusCode}");
         }
 
         // Handle server errors
-        if ($response->status() >= 500) {
-            $this->log('error', 'Server error', [
+        if ($statusCode >= 500) {
+            $this->logError('Server error', [
                 'method' => $method,
                 'url' => $url,
-                'status' => $response->status(),
-                'body' => $response->body(),
+                'endpoint' => $endpoint,
+                'status_code' => $statusCode,
+                'response_body' => $response->body(),
             ]);
 
-            throw new ApiException("Server error: {$response->status()}");
+            throw new ApiException("Server error: {$statusCode}");
         }
 
         // Handle not found
-        if ($response->status() === 404) {
+        if ($statusCode === 404) {
             $this->log('warning', 'Resource not found', [
                 'method' => $method,
                 'url' => $url,
+                'endpoint' => $endpoint,
+                'status_code' => $statusCode,
             ]);
 
             return null;
         }
 
         // Handle other client errors
-        if ($response->status() >= 400) {
-            $this->log('error', 'Client error', [
+        if ($statusCode >= 400) {
+            $this->logError('Client error', [
                 'method' => $method,
                 'url' => $url,
-                'status' => $response->status(),
-                'body' => $response->body(),
+                'endpoint' => $endpoint,
+                'status_code' => $statusCode,
+                'response_body' => $response->body(),
             ]);
 
-            throw new ApiException("Client error: {$response->status()}");
+            throw new ApiException("Client error: {$statusCode}");
         }
 
         // Parse JSON response
@@ -310,22 +435,30 @@ abstract class BaseScraper implements SupermarketScraperInterface
             $data = $response->json();
 
             if ($data === null) {
-                $this->log('error', 'Failed to parse JSON response', [
+                $this->logError('Failed to parse JSON response', [
                     'method' => $method,
                     'url' => $url,
-                    'body' => $response->body(),
+                    'endpoint' => $endpoint,
+                    'response_body' => $response->body(),
                 ]);
 
                 return null;
             }
 
+            $this->logDebug('Response parsed successfully', [
+                'method' => $method,
+                'endpoint' => $endpoint,
+                'data_keys' => array_keys($data),
+            ]);
+
             return $data;
         } catch (\Exception $e) {
-            $this->log('error', 'JSON parsing error', [
+            $this->logError('JSON parsing error', [
                 'method' => $method,
                 'url' => $url,
+                'endpoint' => $endpoint,
                 'error' => $e->getMessage(),
-                'body' => $response->body(),
+                'response_body' => $response->body(),
             ]);
 
             return null;

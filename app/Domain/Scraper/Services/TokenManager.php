@@ -34,10 +34,16 @@ class TokenManager implements TokenManagerInterface
     {
         try {
             $response = Http::timeout(10)
-                ->asForm()
-                ->post(config('scrapers.ah.oauth_url'), [
-                    'client_id' => config('scrapers.ah.client_id'),
-                    'grant_type' => 'authorization_code',
+                ->withHeaders([
+                    'User-Agent' => 'Appie/9.28 (iPhone17,3; iPhone; CPU OS 26_1 like Mac OS X)',
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                    'x-client-name' => 'appie-ios',
+                    'x-client-version' => '9.28',
+                    'x-application' => 'AHWEBSHOP',
+                ])
+                ->post(config('scrapers.ah.oauth_url') . '/token', [
+                    'clientId' => 'appie-ios',
                     'code' => $code,
                 ]);
 
@@ -76,32 +82,72 @@ class TokenManager implements TokenManagerInterface
     public function refreshToken(string $refreshToken): TokenData
     {
         try {
+            Log::info('Attempting to refresh access token');
+
             $response = Http::timeout(10)
-                ->asForm()
-                ->post(config('scrapers.ah.oauth_url'), [
-                    'client_id' => config('scrapers.ah.client_id'),
-                    'grant_type' => 'refresh_token',
-                    'refresh_token' => $refreshToken,
+                ->withHeaders([
+                    'User-Agent' => 'Appie/9.28 (iPhone17,3; iPhone; CPU OS 26_1 like Mac OS X)',
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                    'x-client-name' => 'appie-ios',
+                    'x-client-version' => '9.28',
+                    'x-application' => 'AHWEBSHOP',
+                ])
+                ->post(config('scrapers.ah.oauth_url') . '/token/refresh', [
+                    'clientId' => 'appie-ios',
+                    'refreshToken' => $refreshToken,
                 ]);
 
             if (! $response->successful()) {
+                $statusCode = $response->status();
+                $responseBody = $response->body();
+
+                // Check if refresh token is invalid (401/403)
+                if (in_array($statusCode, [401, 403])) {
+                    Log::channel('scraper-errors')->error('Invalid refresh token - manual intervention required', [
+                        'status_code' => $statusCode,
+                        'response' => $responseBody,
+                    ]);
+
+                    throw new TokenExpiredException(
+                        "Invalid refresh token: {$statusCode}. Please run 'php artisan scraper:auth:setup' to obtain a new refresh token."
+                    );
+                }
+
+                Log::channel('scraper-errors')->error('Token refresh failed', [
+                    'status_code' => $statusCode,
+                    'response' => $responseBody,
+                ]);
+
                 throw new TokenExpiredException(
-                    "Failed to refresh token: {$response->status()} - {$response->body()}"
+                    "Failed to refresh token: {$statusCode} - {$responseBody}"
                 );
             }
 
             $data = $response->json();
 
             if (! isset($data['access_token'])) {
+                Log::channel('scraper-errors')->error('Access token not found in refresh response', [
+                    'response' => $data,
+                ]);
+
                 throw new TokenException('Access token not found in refresh response');
             }
 
-            Log::info('Successfully refreshed access token');
+            Log::info('Successfully refreshed access token', [
+                'expires_in' => $data['expires_in'] ?? 'unknown',
+            ]);
 
             return TokenData::fromApiResponse($data);
+        } catch (TokenException|TokenExpiredException $e) {
+            // Re-throw our custom exceptions
+            throw $e;
         } catch (\Exception $e) {
-            Log::error('Token refresh failed', [
+            Log::channel('scraper-errors')->error('Unexpected error during token refresh', [
                 'error' => $e->getMessage(),
+                'exception_class' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
             ]);
 
             throw new TokenException("Token refresh failed: {$e->getMessage()}", null, 0, $e);

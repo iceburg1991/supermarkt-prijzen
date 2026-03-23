@@ -35,6 +35,12 @@ class ExecuteScrapeRun
     ): ScrapeRun {
         $identifier = $scraper->getIdentifier();
 
+        Log::channel('scraper')->info('Starting scrape run', [
+            'supermarket' => $identifier,
+            'category' => $category,
+            'max_results' => $maxResults,
+        ]);
+
         // Create scrape run record
         $scrapeRun = ScrapeRun::create([
             'supermarket' => $identifier,
@@ -42,18 +48,47 @@ class ExecuteScrapeRun
             'status' => 'running',
         ]);
 
+        // Set scrape run ID on scraper for logging context
+        if (method_exists($scraper, 'setScrapeRunId')) {
+            $scraper->setScrapeRunId($scrapeRun->id);
+        }
+
         try {
             // Authenticate if needed
+            Log::channel('scraper')->info('Authenticating with API', [
+                'supermarket' => $identifier,
+                'scrape_run_id' => $scrapeRun->id,
+            ]);
+
             if (! $scraper->authenticate()) {
                 throw new \Exception('Authentication failed');
             }
 
+            Log::channel('scraper')->info('Authentication successful', [
+                'supermarket' => $identifier,
+                'scrape_run_id' => $scrapeRun->id,
+            ]);
+
             // Fetch products
+            Log::channel('scraper')->info('Fetching products', [
+                'supermarket' => $identifier,
+                'scrape_run_id' => $scrapeRun->id,
+                'category' => $category,
+                'max_results' => $maxResults,
+            ]);
+
             $products = $category !== null
                 ? $scraper->getProductsByCategory($category, $maxResults)
                 : $scraper->searchProducts('', $maxResults);
 
+            Log::channel('scraper')->info('Products fetched', [
+                'supermarket' => $identifier,
+                'scrape_run_id' => $scrapeRun->id,
+                'product_count' => $products->count(),
+            ]);
+
             $productCount = 0;
+            $errorCount = 0;
 
             foreach ($products as $productData) {
                 try {
@@ -78,11 +113,16 @@ class ExecuteScrapeRun
                     // It's wrapped in try-catch there, so failures won't block storage
 
                 } catch (\Throwable $e) {
+                    $errorCount++;
+
                     // Log but continue with next product
-                    Log::error('Failed to store product', [
+                    Log::channel('scraper-errors')->error('Failed to store product', [
                         'product_id' => $productData->productId,
+                        'product_name' => $productData->name,
                         'supermarket' => $identifier,
+                        'scrape_run_id' => $scrapeRun->id,
                         'error' => $e->getMessage(),
+                        'exception_class' => get_class($e),
                     ]);
                 }
             }
@@ -90,20 +130,28 @@ class ExecuteScrapeRun
             // Mark as completed
             $scrapeRun->markCompleted($productCount);
 
-            Log::info('Scrape run completed', [
+            $duration = now()->diffInSeconds($scrapeRun->started_at);
+
+            Log::channel('scraper')->info('Scrape run completed successfully', [
                 'supermarket' => $identifier,
+                'scrape_run_id' => $scrapeRun->id,
                 'product_count' => $productCount,
-                'duration' => now()->diffInSeconds($scrapeRun->started_at),
+                'error_count' => $errorCount,
+                'duration_seconds' => $duration,
+                'products_per_second' => $duration > 0 ? round($productCount / $duration, 2) : 0,
             ]);
 
         } catch (\Throwable $e) {
             // Mark as failed
             $scrapeRun->markFailed($e->getMessage());
 
-            Log::error('Scrape run failed', [
+            Log::channel('scraper-errors')->error('Scrape run failed', [
                 'supermarket' => $identifier,
+                'scrape_run_id' => $scrapeRun->id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'exception_class' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
             ]);
         }
 

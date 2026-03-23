@@ -42,30 +42,33 @@ class ProductRepository
             ]
         );
 
-        // OPTIONAL: Try to match and assign category (wrapped in try-catch)
-        try {
-            $normalizedCategory = $this->categoryMatcher->match(
-                $productData->name,
-                null // We don't have supermarket category from ProductData yet
-            );
+        // OPTIONAL: Sync product categories if provided (wrapped in try-catch)
+        if (! empty($productData->categoryIds)) {
+            try {
+                // Find category database IDs from category_id strings
+                $categoryDbIds = \App\Models\Category::query()
+                    ->where('supermarket', $productData->supermarket)
+                    ->whereIn('category_id', $productData->categoryIds)
+                    ->pluck('id')
+                    ->toArray();
 
-            if ($normalizedCategory !== null) {
-                // Attach normalized category if not already attached
-                if (! $product->categories()->where('normalized_categories.id', $normalizedCategory->id)->exists()) {
-                    // Note: This assumes we have a way to link products to normalized categories
-                    // For now, we'll log it for future implementation
-                    Log::debug('Matched product to normalized category', [
+                if (! empty($categoryDbIds)) {
+                    // Sync categories (replaces existing relationships)
+                    // This ensures each product has only the category from its most recent scrape
+                    $product->categories()->sync($categoryDbIds);
+
+                    Log::debug('Synced product categories', [
                         'product_id' => $product->product_id,
-                        'category' => $normalizedCategory->name,
+                        'categories' => count($categoryDbIds),
                     ]);
                 }
+            } catch (\Throwable $e) {
+                // Log but don't fail - category mapping is optional
+                Log::warning('Category sync failed for product', [
+                    'product_id' => $productData->productId,
+                    'error' => $e->getMessage(),
+                ]);
             }
-        } catch (\Throwable $e) {
-            // Log but don't fail - category mapping is optional
-            Log::warning('Category matching failed for product', [
-                'product_id' => $productData->productId,
-                'error' => $e->getMessage(),
-            ]);
         }
 
         return $product->fresh();

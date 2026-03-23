@@ -39,7 +39,7 @@ class Product extends Model
     public function prices(): HasMany
     {
         return $this->hasMany(Price::class, 'product_id', 'product_id')
-            ->where('supermarket', $this->supermarket);
+            ->where('prices.supermarket', '=', $this->getRawOriginal('supermarket'));
     }
 
     /**
@@ -48,8 +48,8 @@ class Product extends Model
     public function latestPrice(): HasOne
     {
         return $this->hasOne(Price::class, 'product_id', 'product_id')
-            ->where('supermarket', $this->supermarket)
-            ->latestOfMany('scraped_at');
+            ->where('prices.supermarket', '=', $this->getRawOriginal('supermarket'))
+            ->latest('scraped_at');
     }
 
     /**

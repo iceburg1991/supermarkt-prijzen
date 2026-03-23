@@ -30,6 +30,7 @@ readonly class ProductData
      * @param  string  $imageUrl  Product image URL
      * @param  string  $productUrl  Product page URL
      * @param  Carbon  $scrapedAt  Timestamp when data was scraped
+     * @param  array<string>  $categoryIds  Category IDs this product belongs to (optional)
      */
     public function __construct(
         public string $productId,
@@ -44,6 +45,7 @@ readonly class ProductData
         public string $imageUrl,
         public string $productUrl,
         public Carbon $scrapedAt,
+        public array $categoryIds = [],
     ) {}
 
     /**
@@ -73,6 +75,7 @@ readonly class ProductData
             imageUrl: $data['image_url'] ?? '',
             productUrl: $data['product_url'] ?? '',
             scrapedAt: $scrapedAt,
+            categoryIds: $data['category_ids'] ?? [],
         );
     }
 

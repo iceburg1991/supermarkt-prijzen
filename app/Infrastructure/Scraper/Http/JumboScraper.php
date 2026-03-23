@@ -120,7 +120,9 @@ class JumboScraper extends BaseScraper
         ]);
 
         while ($products->count() < $maxResults) {
-            $response = $this->get("/categories/{$categoryId}/products", [
+            // Use search endpoint with category parameter (like Python script)
+            $response = $this->get('/search', [
+                'category' => $categoryId,
                 'offset' => $offset,
                 'limit' => $limit,
             ]);
@@ -129,7 +131,8 @@ class JumboScraper extends BaseScraper
                 break;
             }
 
-            $pageProducts = $this->mapProducts($response['products']['data']);
+            // Pass category ID to mapProducts so it can be stored
+            $pageProducts = $this->mapProducts($response['products']['data'], $categoryId);
             $products = $products->concat($pageProducts);
 
             // Check if we've reached the end
@@ -215,13 +218,14 @@ class JumboScraper extends BaseScraper
      * Map API products to ProductData value objects.
      *
      * @param array<int, array<string, mixed>> $apiProducts Products from API
+     * @param string|null $categoryId Optional category ID to associate with products
      * @return Collection<int, ProductData>
      */
-    protected function mapProducts(array $apiProducts): Collection
+    protected function mapProducts(array $apiProducts, ?string $categoryId = null): Collection
     {
-        return collect($apiProducts)->map(function ($product) {
+        return collect($apiProducts)->map(function ($product) use ($categoryId) {
             try {
-                return $this->mapProduct($product);
+                return $this->mapProduct($product, $categoryId);
             } catch (\Exception $e) {
                 $this->log('warning', 'Failed to map product', [
                     'product_id' => $product['id'] ?? 'unknown',
@@ -237,18 +241,18 @@ class JumboScraper extends BaseScraper
      * Map single API product to ProductData.
      *
      * @param array<string, mixed> $product Product from API
+     * @param string|null $categoryId Optional category ID
      * @return ProductData
      */
-    protected function mapProduct(array $product): ProductData
+    protected function mapProduct(array $product, ?string $categoryId = null): ProductData
     {
-        // Extract price information
-        $regularPrice = $product['prices']['price']['amount'] ?? 0;
-        $priceCents = (int) ($regularPrice * 100);
+        // Extract price information (Jumbo API returns prices in cents already)
+        $priceCents = (int) ($product['prices']['price']['amount'] ?? 0);
 
-        // Check for promotional price
+        // Check for promotional price (also in cents)
         $promoPriceCents = 0;
         if (isset($product['prices']['promotionalPrice']['amount'])) {
-            $promoPriceCents = (int) ($product['prices']['promotionalPrice']['amount'] * 100);
+            $promoPriceCents = (int) $product['prices']['promotionalPrice']['amount'];
         }
 
         // Extract image URL
@@ -265,10 +269,35 @@ class JumboScraper extends BaseScraper
             $productUrl = "https://www.jumbo.com/producten/{$slug}-{$product['id']}";
         }
 
-        // Extract unit price
+        // Extract unit price (e.g., "€ 0,33 / pieces")
         $unitPrice = '';
-        if (isset($product['prices']['unitPrice']['unit'])) {
-            $unitPrice = $product['prices']['unitPrice']['unit'];
+        if (isset($product['prices']['unitPrice'])) {
+            $unitPriceData = $product['prices']['unitPrice'];
+            
+            // Build unit price string from price and unit
+            if (isset($unitPriceData['price']['amount']) && isset($unitPriceData['unit'])) {
+                $price = number_format($unitPriceData['price']['amount'] / 100, 2, ',', '');
+                $unitPrice = "€ {$price} / {$unitPriceData['unit']}";
+            } elseif (isset($unitPriceData['unit'])) {
+                // Fallback to just unit if price is missing
+                $unitPrice = $unitPriceData['unit'];
+            }
+        }
+
+        // Extract badge (can be string or array)
+        $badge = '';
+        if (isset($product['badge'])) {
+            if (is_array($product['badge'])) {
+                $badge = $product['badge']['text'] ?? '';
+            } else {
+                $badge = (string) $product['badge'];
+            }
+        }
+
+        // Build category IDs array
+        $categoryIds = [];
+        if ($categoryId !== null) {
+            $categoryIds[] = $categoryId;
         }
 
         return ProductData::fromArray([
@@ -279,11 +308,12 @@ class JumboScraper extends BaseScraper
             'price_cents' => $priceCents,
             'promo_price_cents' => $promoPriceCents,
             'available' => $product['available'] ?? true,
-            'badge' => $product['badge'] ?? '',
+            'badge' => $badge,
             'unit_price' => $unitPrice,
             'image_url' => $imageUrl,
             'product_url' => $productUrl,
             'scraped_at' => now(),
+            'category_ids' => $categoryIds,
         ]);
     }
 
@@ -299,8 +329,11 @@ class JumboScraper extends BaseScraper
         $flattened = collect();
 
         foreach ($categories as $category) {
+            // Use catId if available (used in search API), otherwise fall back to id
+            $categoryId = $category['catId'] ?? $category['id'];
+            
             $flattened->push([
-                'id' => (string) $category['id'],
+                'id' => (string) $categoryId,
                 'name' => $category['title'] ?? '',
                 'parent_id' => $parentId,
             ]);
@@ -309,7 +342,7 @@ class JumboScraper extends BaseScraper
             if (isset($category['children']) && is_array($category['children'])) {
                 $children = $this->flattenCategories(
                     $category['children'],
-                    (string) $category['id']
+                    (string) $categoryId
                 );
                 $flattened = $flattened->concat($children);
             }

@@ -33,7 +33,7 @@ class ScrapeAhCommand extends Command
             $scrapeRun = $action->execute($scraper, $category, $maxResults);
 
             if ($scrapeRun->status === 'completed') {
-                $duration = now()->diffInSeconds($startTime);
+                $duration = round($startTime->floatDiffInSeconds(now()), 2);
 
                 $this->info('✓ Scrape completed successfully!');
                 $this->info("  Products scraped: {$scrapeRun->product_count}");
