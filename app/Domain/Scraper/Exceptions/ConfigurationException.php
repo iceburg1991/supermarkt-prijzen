@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Exceptions;
+namespace App\Domain\Scraper\Exceptions;
 
 /**
- * Exception thrown when token operations fail.
+ * Exception thrown when configuration is invalid or missing.
  */
-class TokenException extends ScraperException
+class ConfigurationException extends ScraperException
 {
     public function __construct(
-        string $message = 'Token operation failed',
-        public readonly ?string $supermarket = null,
+        string $message = 'Invalid or missing configuration',
+        public readonly ?string $configKey = null,
         int $code = 0,
         ?\Throwable $previous = null
     ) {
@@ -22,7 +22,7 @@ class TokenException extends ScraperException
     public function context(): array
     {
         return [
-            'supermarket' => $this->supermarket,
+            'config_key' => $this->configKey,
         ];
     }
 }

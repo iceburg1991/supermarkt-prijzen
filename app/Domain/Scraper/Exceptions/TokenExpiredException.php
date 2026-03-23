@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Exceptions;
+namespace App\Domain\Scraper\Exceptions;
 
 /**
  * Exception thrown when an access token has expired.
