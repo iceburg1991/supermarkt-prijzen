@@ -38,11 +38,9 @@ class AnalyticsRepository
             ->get()
             ->map(function (Price $price) {
                 return [
-                    'date' => $price->scraped_at->format('Y-m-d H:i:s'),
-                    'price' => $price->price_cents,
-                    'promo_price' => $price->promo_price_cents,
-                    'effective_price' => $price->getEffectivePrice(),
-                    'has_promotion' => $price->hasPromotion(),
+                    'scraped_at' => $price->scraped_at->toIso8601String(),
+                    'price_cents' => $price->price_cents,
+                    'promo_price_cents' => $price->promo_price_cents,
                 ];
             });
     }
@@ -66,7 +64,7 @@ class AnalyticsRepository
             ->selectRaw('AVG(price_cents) as average_price')
             ->first();
 
-        return $result?->average_price ?? 0.0;
+        return (float) ($result?->average_price ?? 0.0);
     }
 
     /**

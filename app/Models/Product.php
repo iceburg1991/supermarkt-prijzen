@@ -24,6 +24,7 @@ use Illuminate\Support\Collection;
 class Product extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'product_id',
         'supermarket',
@@ -39,7 +40,7 @@ class Product extends Model
     public function prices(): HasMany
     {
         return $this->hasMany(Price::class, 'product_id', 'product_id')
-            ->where('prices.supermarket', '=', $this->getRawOriginal('supermarket'));
+            ->where('supermarket', '=', $this->attributes['supermarket'] ?? $this->supermarket);
     }
 
     /**
@@ -48,8 +49,23 @@ class Product extends Model
     public function latestPrice(): HasOne
     {
         return $this->hasOne(Price::class, 'product_id', 'product_id')
-            ->where('prices.supermarket', '=', $this->getRawOriginal('supermarket'))
+            ->where('supermarket', '=', $this->attributes['supermarket'] ?? $this->supermarket)
             ->latest('scraped_at');
+    }
+
+    /**
+     * Get the latest price as an attribute (for when relationship doesn't work).
+     */
+    public function getLatestPriceAttribute(): ?Price
+    {
+        if (! isset($this->relations['latestPrice'])) {
+            return Price::where('product_id', $this->product_id)
+                ->where('supermarket', $this->supermarket)
+                ->latest('scraped_at')
+                ->first();
+        }
+
+        return $this->relations['latestPrice'];
     }
 
     /**
