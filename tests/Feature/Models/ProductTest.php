@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Models;
+namespace Feature\Models;
 
 use App\Models\Category;
 use App\Models\NormalizedCategory;

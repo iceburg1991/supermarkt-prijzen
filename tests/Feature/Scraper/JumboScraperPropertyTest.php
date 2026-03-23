@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\Scraper;
+namespace Feature\Scraper;
 
 use App\Domain\Scraper\ValueObjects\ProductData;
 use App\Domain\Scraper\ValueObjects\ScraperConfig;
@@ -18,7 +18,7 @@ use Tests\TestCase;
  */
 class JumboScraperPropertyTest extends TestCase
 {
-    private const ITERATIONS = 100;
+    private const int ITERATIONS = 100;
 
     /**
      * Property 4: API Field Mapping Completeness (Jumbo)

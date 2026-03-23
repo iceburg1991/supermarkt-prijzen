@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\Scraper;
+namespace Feature\Scraper;
 
 use App\Domain\Scraper\Contracts\TokenManagerInterface;
 use App\Domain\Scraper\ValueObjects\ProductData;
@@ -19,7 +19,7 @@ use Tests\TestCase;
  */
 class AhScraperPropertyTest extends TestCase
 {
-    private const ITERATIONS = 100;
+    private const int ITERATIONS = 100;
 
     /**
      * Property 3: API Field Mapping Completeness (AH)

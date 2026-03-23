@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\Scraper;
+namespace Feature\Scraper;
 
 use App\Domain\Scraper\Contracts\SupermarketScraperInterface;
 use App\Domain\Scraper\Contracts\TokenManagerInterface;
@@ -418,7 +418,6 @@ class ScraperInterfaceTest extends TestCase
         // Config should be accessible (via reflection if needed)
         $reflection = new \ReflectionClass($scraper);
         $configProperty = $reflection->getProperty('config');
-        $configProperty->setAccessible(true);
         $actualConfig = $configProperty->getValue($scraper);
 
         $this->assertEquals(

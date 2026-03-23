@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Models;
+namespace Feature\Models;
 
 use App\Models\ScrapeRun;
 use App\Models\Supermarket;

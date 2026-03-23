@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\Scraper;
+namespace Feature\Scraper;
 
 use App\Domain\Scraper\ValueObjects\ScraperConfig;
 use App\Infrastructure\Scraper\Http\BaseScraper;
@@ -17,7 +17,7 @@ use Tests\TestCase;
  */
 class BaseScraperPropertyTest extends TestCase
 {
-    private const ITERATIONS = 10; // Reduced for speed
+    private const int ITERATIONS = 10; // Reduced for speed
 
     /**
      * Property 5: Rate Limiting Consistency

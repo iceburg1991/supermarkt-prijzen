@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\Scraper;
+namespace Feature\Scraper;
 
 use App\Domain\Scraper\Exceptions\TokenException;
 use App\Domain\Scraper\Services\TokenManager;
@@ -21,7 +21,7 @@ use Tests\TestCase;
  */
 class TokenManagerPropertyTest extends TestCase
 {
-    private const ITERATIONS = 10; // Reduced for speed
+    private const int ITERATIONS = 10; // Reduced for speed
 
     protected function setUp(): void
     {

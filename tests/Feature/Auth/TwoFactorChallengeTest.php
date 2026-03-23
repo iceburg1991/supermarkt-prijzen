@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Auth;
+namespace Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -37,7 +37,7 @@ class TwoFactorChallengeTest extends TestCase
 
         $user->forceFill([
             'two_factor_secret' => encrypt('test-secret'),
-            'two_factor_recovery_codes' => encrypt(json_encode(['code1', 'code2'])),
+            'two_factor_recovery_codes' => encrypt(json_encode(['code1', 'code2'], JSON_THROW_ON_ERROR)),
             'two_factor_confirmed_at' => now(),
         ])->save();
 

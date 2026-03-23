@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Database;
+namespace Feature\Database;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
