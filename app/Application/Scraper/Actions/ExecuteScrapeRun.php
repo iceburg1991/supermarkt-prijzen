@@ -8,7 +8,9 @@ use App\Domain\Scraper\Contracts\SupermarketScraperInterface;
 use App\Infrastructure\Scraper\Repositories\PriceRepository;
 use App\Infrastructure\Scraper\Repositories\ProductRepository;
 use App\Models\ScrapeRun;
+use App\Notifications\ScrapeRunFailed;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * Action to execute a complete scrape run for a supermarket.
@@ -153,8 +155,46 @@ class ExecuteScrapeRun
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
             ]);
+
+            // Send notification if enabled
+            if (config('scrapers.notifications.enabled', true)) {
+                $this->sendFailureNotification($scrapeRun);
+            }
         }
 
         return $scrapeRun->fresh();
+    }
+
+    /**
+     * Send failure notification to configured channels.
+     *
+     * @param  ScrapeRun  $scrapeRun  Failed scrape run
+     */
+    private function sendFailureNotification(ScrapeRun $scrapeRun): void
+    {
+        try {
+            // Send to mail if configured
+            if (config('scrapers.notifications.channels.mail', false)) {
+                $mailTo = config('scrapers.notifications.mail_to');
+                if ($mailTo) {
+                    Notification::route('mail', $mailTo)
+                        ->notify(new ScrapeRunFailed($scrapeRun));
+                }
+            }
+
+            // Send to Slack if configured
+            if (config('scrapers.notifications.channels.slack', false)) {
+                $slackWebhook = config('scrapers.notifications.slack_webhook');
+                if ($slackWebhook) {
+                    Notification::route('slack', $slackWebhook)
+                        ->notify(new ScrapeRunFailed($scrapeRun));
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::channel('scraper-errors')->error('Failed to send scrape failure notification', [
+                'scrape_run_id' => $scrapeRun->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

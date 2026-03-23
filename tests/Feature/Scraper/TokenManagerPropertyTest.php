@@ -48,7 +48,7 @@ class TokenManagerPropertyTest extends TestCase
         $expiresIn = 3600;
 
         Http::fake([
-            '*/oauth/token' => Http::response([
+            'https://api.ah.nl/oauth/token/token/refresh' => Http::response([
                 'access_token' => $accessToken,
                 'refresh_token' => $refreshToken,
                 'expires_in' => $expiresIn,
@@ -153,7 +153,7 @@ class TokenManagerPropertyTest extends TestCase
     public function test_token_refresh_failure_handling(): void
     {
         Http::fake([
-            '*/oauth/token' => Http::response(['error' => 'invalid_grant'], 401),
+            'https://api.ah.nl/oauth/token/token/refresh' => Http::response(['error' => 'invalid_grant'], 401),
         ]);
 
         $tokenManager = new TokenManager;
@@ -172,7 +172,7 @@ class TokenManagerPropertyTest extends TestCase
         $refreshToken = fake()->sha256();
 
         Http::fake([
-            '*/oauth/token' => Http::response([
+            'https://api.ah.nl/oauth/token/token' => Http::response([
                 'access_token' => $accessToken,
                 'refresh_token' => $refreshToken,
                 'expires_in' => 3600,

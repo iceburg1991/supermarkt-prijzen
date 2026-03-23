@@ -365,20 +365,18 @@ class JumboScraperPropertyTest extends TestCase
             "Iteration {$iteration}: quantity should map to quantity"
         );
 
-        // prices.price.amount → price_cents
-        $regularPrice = $apiProduct['prices']['price']['amount'] ?? 0;
-        $expectedPriceCents = (int) ($regularPrice * 100);
+        // prices.price.amount → price_cents (API returns cents already)
+        $regularPriceCents = $apiProduct['prices']['price']['amount'] ?? 0;
         $this->assertEquals(
-            $expectedPriceCents,
+            $regularPriceCents,
             $productData->priceCents,
             "Iteration {$iteration}: prices.price.amount should map to price_cents"
         );
 
-        // prices.promotionalPrice.amount → promo_price_cents
-        $promoPrice = $apiProduct['prices']['promotionalPrice']['amount'] ?? 0;
-        $expectedPromoCents = (int) ($promoPrice * 100);
+        // prices.promotionalPrice.amount → promo_price_cents (API returns cents already)
+        $promoPriceCents = $apiProduct['prices']['promotionalPrice']['amount'] ?? 0;
         $this->assertEquals(
-            $expectedPromoCents,
+            $promoPriceCents,
             $productData->promoPriceCents,
             "Iteration {$iteration}: prices.promotionalPrice.amount should map to promo_price_cents"
         );
@@ -446,23 +444,24 @@ class JumboScraperPropertyTest extends TestCase
         ?string $customId = null
     ): array {
         $productId = $customId ?? 'JUM-'.fake()->numberBetween(100000, 999999);
-        $regularPrice = fake()->randomFloat(2, 0.50, 50.00);
-        $promoPrice = $withPromotion ? $regularPrice * 0.75 : null;
+        // Jumbo API returns prices in CENTS (not euros)
+        $regularPriceCents = fake()->numberBetween(50, 5000); // 0.50 to 50.00 euros in cents
+        $promoPriceCents = $withPromotion ? (int) ($regularPriceCents * 0.75) : null;
 
         $product = [
             'id' => $productId,
             'title' => fake()->words(3, true),
             'prices' => [
                 'price' => [
-                    'amount' => $regularPrice,
+                    'amount' => $regularPriceCents,
                 ],
             ],
         ];
 
         // Add promotional price if applicable
-        if ($withPromotion && $promoPrice !== null) {
+        if ($withPromotion && $promoPriceCents !== null) {
             $product['prices']['promotionalPrice'] = [
-                'amount' => $promoPrice,
+                'amount' => $promoPriceCents,
             ];
             $product['badge'] = fake()->randomElement([
                 '2e halve prijs',

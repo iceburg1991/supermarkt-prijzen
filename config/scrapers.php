@@ -14,7 +14,7 @@ return [
 
     'ah' => [
         'base_url' => env('SCRAPER_AH_BASE_URL', 'https://api.ah.nl'),
-        'oauth_url' => env('SCRAPER_AH_OAUTH_URL', 'https://api.ah.nl/mobile-auth/v1/auth/token'),
+        'oauth_url' => env('SCRAPER_AH_OAUTH_URL', 'https://api.ah.nl/mobile-auth/v1/auth'),
         'client_id' => env('SCRAPER_AH_CLIENT_ID', 'appie-ios'),
         'refresh_token' => env('SCRAPER_AH_REFRESH_TOKEN'),
         'rate_limit_delay' => env('SCRAPER_AH_RATE_LIMIT_DELAY', 600), // milliseconds
@@ -105,7 +105,7 @@ return [
     'analytics' => [
         'cache_enabled' => env('SCRAPER_ANALYTICS_CACHE_ENABLED', true),
         'cache_ttl' => env('SCRAPER_ANALYTICS_CACHE_TTL', 3600), // seconds (1 hour)
-        'cache_threshold' => env('SCRAPER_ANALYTICS_CACHE_THRESHOLD', 100), // milliseconds
+        'performance_threshold' => env('SCRAPER_ANALYTICS_PERFORMANCE_THRESHOLD', 1000), // milliseconds
     ],
 
 ];

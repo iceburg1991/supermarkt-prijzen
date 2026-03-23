@@ -127,6 +127,40 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | Scraper Log Channels
+        |--------------------------------------------------------------------------
+        |
+        | These channels are dedicated to scraper operations, providing
+        | granular control over logging for different scraper scenarios.
+        |
+        */
+
+        'scraper' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/scraper.log'),
+            'level' => env('LOG_LEVEL', 'info'),
+            'days' => env('LOG_DAILY_DAYS', 14),
+            'replace_placeholders' => true,
+        ],
+
+        'scraper-errors' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/scraper-errors.log'),
+            'level' => 'error',
+            'days' => env('LOG_DAILY_DAYS', 30),
+            'replace_placeholders' => true,
+        ],
+
+        'scraper-debug' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/scraper-debug.log'),
+            'level' => 'debug',
+            'days' => env('LOG_DAILY_DAYS', 7),
+            'replace_placeholders' => true,
+        ],
+
     ],
 
 ];
