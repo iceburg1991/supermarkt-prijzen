@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Infrastructure\Scraper\Repositories;
+namespace App\Repositories\Scraper;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;

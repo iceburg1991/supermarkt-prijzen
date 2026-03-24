@@ -6,7 +6,7 @@ namespace Feature\Scraper;
 
 use App\DataTransferObjects\Scraper\ProductData;
 use App\DataTransferObjects\Scraper\ScraperConfig;
-use App\Infrastructure\Scraper\Http\JumboScraper;
+use App\Http\Scrapers\JumboScraper;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -466,11 +466,11 @@ class JumboScraperPropertyTest extends TestCase
         if (! $missingOptional || (random_int(1, 100) <= 80)) {
             $uuid = sprintf(
                 '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-                random_int(0, 0xffff), random_int(0, 0xffff),
-                random_int(0, 0xffff),
-                random_int(0, 0x0fff) | 0x4000,
-                random_int(0, 0x3fff) | 0x8000,
-                random_int(0, 0xffff), random_int(0, 0xffff), random_int(0, 0xffff)
+                random_int(0, 0xFFFF), random_int(0, 0xFFFF),
+                random_int(0, 0xFFFF),
+                random_int(0, 0x0FFF) | 0x4000,
+                random_int(0, 0x3FFF) | 0x8000,
+                random_int(0, 0xFFFF), random_int(0, 0xFFFF), random_int(0, 0xFFFF)
             );
             $product['imageInfo'] = [
                 'primaryView' => [

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Scraper;
 
-use App\Domain\Scraper\Services\TokenManager;
+use App\Services\Scraper\TokenManager;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;

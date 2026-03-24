@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Infrastructure\Scraper\Repositories;
+namespace App\Repositories\Scraper;
 
 use App\Models\Category;
 use App\Models\CategoryMapping;

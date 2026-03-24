@@ -7,7 +7,7 @@ namespace Feature\Scraper;
 use App\Contracts\Scraper\TokenManagerInterface;
 use App\DataTransferObjects\Scraper\ProductData;
 use App\DataTransferObjects\Scraper\ScraperConfig;
-use App\Infrastructure\Scraper\Http\AhScraper;
+use App\Http\Scrapers\AhScraper;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -333,11 +333,11 @@ class AhScraperPropertyTest extends TestCase
         if (! $missingOptional || (random_int(1, 100) <= 80)) {
             $uuid = sprintf(
                 '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-                random_int(0, 0xffff), random_int(0, 0xffff),
-                random_int(0, 0xffff),
-                random_int(0, 0x0fff) | 0x4000,
-                random_int(0, 0x3fff) | 0x8000,
-                random_int(0, 0xffff), random_int(0, 0xffff), random_int(0, 0xffff)
+                random_int(0, 0xFFFF), random_int(0, 0xFFFF),
+                random_int(0, 0xFFFF),
+                random_int(0, 0x0FFF) | 0x4000,
+                random_int(0, 0x3FFF) | 0x8000,
+                random_int(0, 0xFFFF), random_int(0, 0xFFFF), random_int(0, 0xFFFF)
             );
             $product['images'] = [
                 ['url' => 'https://static.ah.nl/dam/product/'.$uuid.'.jpg'],

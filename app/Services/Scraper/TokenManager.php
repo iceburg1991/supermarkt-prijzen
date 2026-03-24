@@ -42,7 +42,7 @@ class TokenManager implements TokenManagerInterface
                     'x-client-version' => '9.28',
                     'x-application' => 'AHWEBSHOP',
                 ])
-                ->post(config('scrapers.ah.oauth_url') . '/token', [
+                ->post(config('scrapers.ah.oauth_url').'/token', [
                     'clientId' => 'appie-ios',
                     'code' => $code,
                 ]);
@@ -93,7 +93,7 @@ class TokenManager implements TokenManagerInterface
                     'x-client-version' => '9.28',
                     'x-application' => 'AHWEBSHOP',
                 ])
-                ->post(config('scrapers.ah.oauth_url') . '/token/refresh', [
+                ->post(config('scrapers.ah.oauth_url').'/token/refresh', [
                     'clientId' => 'appie-ios',
                     'refreshToken' => $refreshToken,
                 ]);

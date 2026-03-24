@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Contracts\Scraper;
 
+use App\Domain\Scraper\ValueObjects\ProductData;
 use Illuminate\Support\Collection;
 
 /**
@@ -18,7 +19,7 @@ interface SupermarketScraperInterface
     /**
      * Authenticate with the supermarket API if required.
      *
-     * @param string|null $authCode Optional authorization code for OAuth flow
+     * @param  string|null  $authCode  Optional authorization code for OAuth flow
      * @return bool True if authentication successful or not required
      */
     public function authenticate(?string $authCode = null): bool;
@@ -26,9 +27,9 @@ interface SupermarketScraperInterface
     /**
      * Search for products by query term.
      *
-     * @param string $query Search term
-     * @param int $maxResults Maximum number of results to return
-     * @return Collection<int, \App\Domain\Scraper\ValueObjects\ProductData>
+     * @param  string  $query  Search term
+     * @param  int  $maxResults  Maximum number of results to return
+     * @return Collection<int, ProductData>
      */
     public function searchProducts(string $query, int $maxResults = 20): Collection;
 
@@ -42,17 +43,17 @@ interface SupermarketScraperInterface
     /**
      * Get products within a specific category.
      *
-     * @param string $categoryId Category identifier
-     * @param int $maxResults Maximum number of results to return
-     * @return Collection<int, \App\Domain\Scraper\ValueObjects\ProductData>
+     * @param  string  $categoryId  Category identifier
+     * @param  int  $maxResults  Maximum number of results to return
+     * @return Collection<int, ProductData>
      */
     public function getProductsByCategory(string $categoryId, int $maxResults = 50): Collection;
 
     /**
      * Get products currently on promotion.
      *
-     * @param int $maxResults Maximum number of results to return
-     * @return Collection<int, \App\Domain\Scraper\ValueObjects\ProductData>
+     * @param  int  $maxResults  Maximum number of results to return
+     * @return Collection<int, ProductData>
      */
     public function getPromotionalProducts(int $maxResults = 30): Collection;
 

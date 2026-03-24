@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Application\Scraper\Actions;
+namespace App\Actions;
 
-use App\Domain\Scraper\Contracts\SupermarketScraperInterface;
-use App\Infrastructure\Scraper\Repositories\PriceRepository;
-use App\Infrastructure\Scraper\Repositories\ProductRepository;
+use App\Contracts\Scraper\SupermarketScraperInterface;
 use App\Models\ScrapeRun;
 use App\Notifications\ScrapeRunFailed;
+use App\Repositories\Scraper\PriceRepository;
+use App\Repositories\Scraper\ProductRepository;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 

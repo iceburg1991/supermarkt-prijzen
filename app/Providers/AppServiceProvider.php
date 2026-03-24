@@ -2,6 +2,12 @@
 
 namespace App\Providers;
 
+use App\Contracts\Scraper\TokenManagerInterface;
+use App\DataTransferObjects\Scraper\ScraperConfig;
+use App\Infrastructure\Scraper\Http\AhScraper;
+use App\Infrastructure\Scraper\Http\JumboScraper;
+use App\Services\Scraper\ScraperRegistry;
+use App\Services\Scraper\TokenManager;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -25,25 +31,25 @@ class AppServiceProvider extends ServiceProvider
     {
         // Bind TokenManager interface
         $this->app->bind(
-            \App\Contracts\Scraper\TokenManagerInterface::class,
-            \App\Services\Scraper\TokenManager::class
+            TokenManagerInterface::class,
+            TokenManager::class
         );
 
         // Bind ScraperRegistry as singleton
-        $this->app->singleton(\App\Services\Scraper\ScraperRegistry::class);
+        $this->app->singleton(ScraperRegistry::class);
 
         // Bind AhScraper with its dependencies
-        $this->app->bind(\App\Infrastructure\Scraper\Http\AhScraper::class, function ($app) {
-            return new \App\Infrastructure\Scraper\Http\AhScraper(
-                \App\DataTransferObjects\Scraper\ScraperConfig::forAh(),
-                $app->make(\App\Contracts\Scraper\TokenManagerInterface::class)
+        $this->app->bind(AhScraper::class, function ($app) {
+            return new AhScraper(
+                ScraperConfig::forAh(),
+                $app->make(TokenManagerInterface::class)
             );
         });
 
         // Bind JumboScraper with its dependencies
-        $this->app->bind(\App\Infrastructure\Scraper\Http\JumboScraper::class, function ($app) {
-            return new \App\Infrastructure\Scraper\Http\JumboScraper(
-                \App\DataTransferObjects\Scraper\ScraperConfig::forJumbo()
+        $this->app->bind(JumboScraper::class, function ($app) {
+            return new JumboScraper(
+                ScraperConfig::forJumbo()
             );
         });
     }
@@ -62,7 +68,7 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function discoverScrapers(): void
     {
-        $registry = $this->app->make(\App\Services\Scraper\ScraperRegistry::class);
+        $registry = $this->app->make(ScraperRegistry::class);
         $registry->discover();
     }
 

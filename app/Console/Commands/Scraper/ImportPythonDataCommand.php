@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Scraper;
 
-use App\Domain\Scraper\ValueObjects\ProductData;
-use App\Infrastructure\Scraper\Repositories\ProductRepository;
+use App\DataTransferObjects\Scraper\ProductData;
 use App\Models\Price;
 use App\Models\ScrapeRun;
+use App\Repositories\Scraper\ProductRepository;
 use Carbon\Carbon;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;

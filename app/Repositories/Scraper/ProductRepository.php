@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Infrastructure\Scraper\Repositories;
+namespace App\Repositories\Scraper;
 
 use App\DataTransferObjects\Scraper\ProductData;
+use App\Models\Category;
 use App\Models\Product;
 use App\Services\Scraper\CategoryMatcher;
 use Illuminate\Support\Collection;
@@ -46,7 +47,7 @@ class ProductRepository
         if (! empty($productData->categoryIds)) {
             try {
                 // Find category database IDs from category_id strings
-                $categoryDbIds = \App\Models\Category::query()
+                $categoryDbIds = Category::query()
                     ->where('supermarket', $productData->supermarket)
                     ->whereIn('category_id', $productData->categoryIds)
                     ->pluck('id')

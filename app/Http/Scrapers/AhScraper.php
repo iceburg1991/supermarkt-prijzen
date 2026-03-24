@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Infrastructure\Scraper\Http;
+namespace App\Http\Scrapers;
 
 use App\Contracts\Scraper\TokenManagerInterface;
 use App\DataTransferObjects\Scraper\ProductData;
 use App\DataTransferObjects\Scraper\ScraperConfig;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Collection;
 
 /**
@@ -25,8 +26,8 @@ class AhScraper extends BaseScraper
     /**
      * Create a new AhScraper instance.
      *
-     * @param ScraperConfig $config Scraper configuration
-     * @param TokenManagerInterface $tokenManager Token manager
+     * @param  ScraperConfig  $config  Scraper configuration
+     * @param  TokenManagerInterface  $tokenManager  Token manager
      */
     public function __construct(ScraperConfig $config, TokenManagerInterface $tokenManager)
     {
@@ -37,7 +38,7 @@ class AhScraper extends BaseScraper
     /**
      * Authenticate with the AH API using OAuth token flow.
      *
-     * @param string|null $authCode Optional authorization code for initial setup
+     * @param  string|null  $authCode  Optional authorization code for initial setup
      * @return bool True if authentication successful
      */
     public function authenticate(?string $authCode = null): bool
@@ -74,8 +75,8 @@ class AhScraper extends BaseScraper
     /**
      * Search for products by query term.
      *
-     * @param string $query Search term
-     * @param int $maxResults Maximum number of results to return
+     * @param  string  $query  Search term
+     * @param  int  $maxResults  Maximum number of results to return
      * @return Collection<int, ProductData>
      */
     public function searchProducts(string $query, int $maxResults = 20): Collection
@@ -154,8 +155,8 @@ class AhScraper extends BaseScraper
     /**
      * Get products within a specific category.
      *
-     * @param string $categoryId Category identifier
-     * @param int $maxResults Maximum number of results to return
+     * @param  string  $categoryId  Category identifier
+     * @param  int  $maxResults  Maximum number of results to return
      * @return Collection<int, ProductData>
      */
     public function getProductsByCategory(string $categoryId, int $maxResults = 50): Collection
@@ -203,7 +204,7 @@ class AhScraper extends BaseScraper
     /**
      * Get products currently on promotion.
      *
-     * @param int $maxResults Maximum number of results to return
+     * @param  int  $maxResults  Maximum number of results to return
      * @return Collection<int, ProductData>
      */
     public function getPromotionalProducts(int $maxResults = 30): Collection
@@ -254,8 +255,6 @@ class AhScraper extends BaseScraper
 
     /**
      * Get the supermarket identifier.
-     *
-     * @return string
      */
     public function getIdentifier(): string
     {
@@ -265,7 +264,7 @@ class AhScraper extends BaseScraper
     /**
      * Map API products to ProductData value objects.
      *
-     * @param array<int, array<string, mixed>> $apiProducts Products from API
+     * @param  array<int, array<string, mixed>>  $apiProducts  Products from API
      * @return Collection<int, ProductData>
      */
     protected function mapProducts(array $apiProducts): Collection
@@ -287,8 +286,7 @@ class AhScraper extends BaseScraper
     /**
      * Map single API product to ProductData.
      *
-     * @param array<string, mixed> $product Product from API
-     * @return ProductData
+     * @param  array<string, mixed>  $product  Product from API
      */
     protected function mapProduct(array $product): ProductData
     {
@@ -340,10 +338,8 @@ class AhScraper extends BaseScraper
 
     /**
      * Create HTTP client with authentication header.
-     *
-     * @return \Illuminate\Http\Client\PendingRequest
      */
-    protected function createHttpClient(): \Illuminate\Http\Client\PendingRequest
+    protected function createHttpClient(): PendingRequest
     {
         $client = parent::createHttpClient();
 

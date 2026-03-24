@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Scraper;
 
-use App\Infrastructure\Scraper\Repositories\CategoryRepository;
 use App\Models\Category;
 use App\Models\NormalizedCategory;
 use App\Models\Product;
+use App\Repositories\Scraper\CategoryRepository;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 

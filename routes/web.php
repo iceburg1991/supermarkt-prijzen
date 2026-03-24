@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\SupermarketController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -12,8 +13,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'Dashboard')->name('dashboard');
 
     // Supermarket routes
-    Route::get('supermarkets', [\App\Http\Controllers\SupermarketController::class, 'dashboard'])->name('supermarkets.dashboard');
-    Route::post('supermarkets/{identifier}/sync', [\App\Http\Controllers\SupermarketController::class, 'sync'])->name('supermarkets.sync');
+    Route::get('supermarkets', [SupermarketController::class, 'dashboard'])->name('supermarkets.dashboard');
+    Route::post('supermarkets/{identifier}/sync', [SupermarketController::class, 'sync'])->name('supermarkets.sync');
 
     // Product routes
     Route::get('products', [ProductController::class, 'index'])->name('products.index');

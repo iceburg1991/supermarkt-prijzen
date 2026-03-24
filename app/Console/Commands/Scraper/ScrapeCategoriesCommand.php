@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Scraper;
 
-use App\Domain\Scraper\Services\ScraperRegistry;
-use App\Infrastructure\Scraper\Repositories\CategoryRepository;
+use App\Repositories\Scraper\CategoryRepository;
+use App\Services\Scraper\ScraperRegistry;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -80,7 +80,7 @@ class ScrapeCategoriesCommand extends Command
             $this->newLine();
         }
 
-        $this->info("✓ Category scrape completed!");
+        $this->info('✓ Category scrape completed!');
         $this->info("  Total categories stored: {$totalCategories}");
 
         return Command::SUCCESS;

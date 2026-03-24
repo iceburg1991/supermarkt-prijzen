@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Feature\Scraper;
 
 use App\DataTransferObjects\Scraper\ScraperConfig;
-use App\Infrastructure\Scraper\Http\BaseScraper;
+use App\Http\Scrapers\BaseScraper;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Infrastructure\Scraper\Http;
+namespace App\Http\Scrapers;
 
 use App\DataTransferObjects\Scraper\ProductData;
 use Illuminate\Support\Collection;
@@ -18,7 +18,7 @@ class JumboScraper extends BaseScraper
     /**
      * Authenticate with the Jumbo API (no-op, no authentication required).
      *
-     * @param string|null $authCode Not used for Jumbo
+     * @param  string|null  $authCode  Not used for Jumbo
      * @return bool Always returns true
      */
     public function authenticate(?string $authCode = null): bool
@@ -31,8 +31,8 @@ class JumboScraper extends BaseScraper
     /**
      * Search for products by query term.
      *
-     * @param string $query Search term
-     * @param int $maxResults Maximum number of results to return
+     * @param  string  $query  Search term
+     * @param  int  $maxResults  Maximum number of results to return
      * @return Collection<int, ProductData>
      */
     public function searchProducts(string $query, int $maxResults = 20): Collection
@@ -105,8 +105,8 @@ class JumboScraper extends BaseScraper
     /**
      * Get products within a specific category.
      *
-     * @param string $categoryId Category identifier
-     * @param int $maxResults Maximum number of results to return
+     * @param  string  $categoryId  Category identifier
+     * @param  int  $maxResults  Maximum number of results to return
      * @return Collection<int, ProductData>
      */
     public function getProductsByCategory(string $categoryId, int $maxResults = 50): Collection
@@ -157,7 +157,7 @@ class JumboScraper extends BaseScraper
     /**
      * Get products currently on promotion.
      *
-     * @param int $maxResults Maximum number of results to return
+     * @param  int  $maxResults  Maximum number of results to return
      * @return Collection<int, ProductData>
      */
     public function getPromotionalProducts(int $maxResults = 30): Collection
@@ -206,8 +206,6 @@ class JumboScraper extends BaseScraper
 
     /**
      * Get the supermarket identifier.
-     *
-     * @return string
      */
     public function getIdentifier(): string
     {
@@ -217,8 +215,8 @@ class JumboScraper extends BaseScraper
     /**
      * Map API products to ProductData value objects.
      *
-     * @param array<int, array<string, mixed>> $apiProducts Products from API
-     * @param string|null $categoryId Optional category ID to associate with products
+     * @param  array<int, array<string, mixed>>  $apiProducts  Products from API
+     * @param  string|null  $categoryId  Optional category ID to associate with products
      * @return Collection<int, ProductData>
      */
     protected function mapProducts(array $apiProducts, ?string $categoryId = null): Collection
@@ -240,9 +238,8 @@ class JumboScraper extends BaseScraper
     /**
      * Map single API product to ProductData.
      *
-     * @param array<string, mixed> $product Product from API
-     * @param string|null $categoryId Optional category ID
-     * @return ProductData
+     * @param  array<string, mixed>  $product  Product from API
+     * @param  string|null  $categoryId  Optional category ID
      */
     protected function mapProduct(array $product, ?string $categoryId = null): ProductData
     {
@@ -273,7 +270,7 @@ class JumboScraper extends BaseScraper
         $unitPrice = '';
         if (isset($product['prices']['unitPrice'])) {
             $unitPriceData = $product['prices']['unitPrice'];
-            
+
             // Build unit price string from price and unit
             if (isset($unitPriceData['price']['amount']) && isset($unitPriceData['unit'])) {
                 $price = number_format($unitPriceData['price']['amount'] / 100, 2, ',', '');
@@ -320,8 +317,8 @@ class JumboScraper extends BaseScraper
     /**
      * Flatten nested category structure.
      *
-     * @param array<int, array<string, mixed>> $categories Categories from API
-     * @param string|null $parentId Parent category ID
+     * @param  array<int, array<string, mixed>>  $categories  Categories from API
+     * @param  string|null  $parentId  Parent category ID
      * @return Collection<int, array{id: string, name: string, parent_id: string|null}>
      */
     protected function flattenCategories(array $categories, ?string $parentId = null): Collection
@@ -331,7 +328,7 @@ class JumboScraper extends BaseScraper
         foreach ($categories as $category) {
             // Use catId if available (used in search API), otherwise fall back to id
             $categoryId = $category['catId'] ?? $category['id'];
-            
+
             $flattened->push([
                 'id' => (string) $categoryId,
                 'name' => $category['title'] ?? '',

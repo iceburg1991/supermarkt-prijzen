@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Supermarket extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'identifier',
         'name',

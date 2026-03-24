@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\DataTransferObjects\Scraper;
 
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Spatie\LaravelData\Attributes\WithCast;
 use Spatie\LaravelData\Casts\DateTimeInterfaceCast;
 use Spatie\LaravelData\Data;
@@ -78,13 +79,12 @@ class ProductData extends Data
      * implementation that used fromArray(). It directly calls the constructor
      * to avoid Spatie Data's heavy metadata processing.
      *
-     * @param array<string, mixed> $data Product data array
-     * @return self
+     * @param  array<string, mixed>  $data  Product data array
      */
     public static function fromArray(array $data): self
     {
         $scrapedAt = $data['scraped_at'];
-        if ($scrapedAt instanceof \Carbon\CarbonImmutable) {
+        if ($scrapedAt instanceof CarbonImmutable) {
             $scrapedAt = Carbon::instance($scrapedAt);
         } elseif (is_string($scrapedAt)) {
             $scrapedAt = Carbon::parse($scrapedAt);

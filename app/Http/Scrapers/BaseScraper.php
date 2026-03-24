@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Infrastructure\Scraper\Http;
+namespace App\Http\Scrapers;
 
 use App\Contracts\Scraper\SupermarketScraperInterface;
 use App\DataTransferObjects\Scraper\ScraperConfig;
@@ -55,7 +55,7 @@ abstract class BaseScraper implements SupermarketScraperInterface
     /**
      * Create a new BaseScraper instance.
      *
-     * @param ScraperConfig $config Scraper configuration
+     * @param  ScraperConfig  $config  Scraper configuration
      */
     public function __construct(ScraperConfig $config)
     {
@@ -68,8 +68,7 @@ abstract class BaseScraper implements SupermarketScraperInterface
     /**
      * Set the current scrape run ID for logging context.
      *
-     * @param int|null $scrapeRunId Scrape run ID
-     * @return void
+     * @param  int|null  $scrapeRunId  Scrape run ID
      */
     public function setScrapeRunId(?int $scrapeRunId): void
     {
@@ -79,15 +78,15 @@ abstract class BaseScraper implements SupermarketScraperInterface
     /**
      * Make HTTP GET request with rate limiting and retry logic.
      *
-     * @param string $path API endpoint path
-     * @param array<string, mixed> $params Query parameters
+     * @param  string  $path  API endpoint path
+     * @param  array<string, mixed>  $params  Query parameters
      * @return array<string, mixed>|null Response data or null on failure
      */
     protected function get(string $path, array $params = []): ?array
     {
         $url = $this->buildUrl($path);
 
-        $this->log('info', "Starting GET request", [
+        $this->log('info', 'Starting GET request', [
             'endpoint' => $path,
             'url' => $url,
             'params' => $params,
@@ -108,7 +107,7 @@ abstract class BaseScraper implements SupermarketScraperInterface
         });
 
         if ($result !== null) {
-            $this->log('info', "GET request completed successfully", [
+            $this->log('info', 'GET request completed successfully', [
                 'endpoint' => $path,
                 'url' => $url,
             ]);
@@ -120,15 +119,15 @@ abstract class BaseScraper implements SupermarketScraperInterface
     /**
      * Make HTTP POST request with rate limiting and retry logic.
      *
-     * @param string $path API endpoint path
-     * @param array<string, mixed> $data Request body data
+     * @param  string  $path  API endpoint path
+     * @param  array<string, mixed>  $data  Request body data
      * @return array<string, mixed>|null Response data or null on failure
      */
     protected function post(string $path, array $data = []): ?array
     {
         $url = $this->buildUrl($path);
 
-        $this->log('info', "Starting POST request", [
+        $this->log('info', 'Starting POST request', [
             'endpoint' => $path,
             'url' => $url,
         ]);
@@ -148,7 +147,7 @@ abstract class BaseScraper implements SupermarketScraperInterface
         });
 
         if ($result !== null) {
-            $this->log('info', "POST request completed successfully", [
+            $this->log('info', 'POST request completed successfully', [
                 'endpoint' => $path,
                 'url' => $url,
             ]);
@@ -159,8 +158,6 @@ abstract class BaseScraper implements SupermarketScraperInterface
 
     /**
      * Apply rate limiting delay between requests.
-     *
-     * @return void
      */
     protected function applyRateLimit(): void
     {
@@ -181,8 +178,8 @@ abstract class BaseScraper implements SupermarketScraperInterface
     /**
      * Retry failed requests with exponential backoff.
      *
-     * @param callable $callback Request callback to retry
-     * @param int $maxAttempts Maximum number of retry attempts
+     * @param  callable  $callback  Request callback to retry
+     * @param  int  $maxAttempts  Maximum number of retry attempts
      * @return mixed Result from callback or null on failure
      */
     protected function retryWithBackoff(callable $callback, ?int $maxAttempts = null): mixed
@@ -255,10 +252,9 @@ abstract class BaseScraper implements SupermarketScraperInterface
     /**
      * Log scraper activity.
      *
-     * @param string $level Log level (debug, info, warning, error)
-     * @param string $message Log message
-     * @param array<string, mixed> $context Additional context
-     * @return void
+     * @param  string  $level  Log level (debug, info, warning, error)
+     * @param  string  $message  Log message
+     * @param  array<string, mixed>  $context  Additional context
      */
     protected function log(string $level, string $message, array $context = []): void
     {
@@ -283,9 +279,8 @@ abstract class BaseScraper implements SupermarketScraperInterface
     /**
      * Log debug message (only when SCRAPER_DEBUG=true).
      *
-     * @param string $message Log message
-     * @param array<string, mixed> $context Additional context
-     * @return void
+     * @param  string  $message  Log message
+     * @param  array<string, mixed>  $context  Additional context
      */
     protected function logDebug(string $message, array $context = []): void
     {
@@ -308,9 +303,8 @@ abstract class BaseScraper implements SupermarketScraperInterface
     /**
      * Log error message to both scraper and scraper-errors channels.
      *
-     * @param string $message Log message
-     * @param array<string, mixed> $context Additional context
-     * @return void
+     * @param  string  $message  Log message
+     * @param  array<string, mixed>  $context  Additional context
      */
     protected function logError(string $message, array $context = []): void
     {
@@ -329,8 +323,6 @@ abstract class BaseScraper implements SupermarketScraperInterface
 
     /**
      * Create HTTP client with configured headers and timeout.
-     *
-     * @return PendingRequest
      */
     protected function createHttpClient(): PendingRequest
     {
@@ -342,7 +334,7 @@ abstract class BaseScraper implements SupermarketScraperInterface
     /**
      * Build full URL from path.
      *
-     * @param string $path API endpoint path
+     * @param  string  $path  API endpoint path
      * @return string Full URL
      */
     protected function buildUrl(string $path): string
@@ -356,11 +348,12 @@ abstract class BaseScraper implements SupermarketScraperInterface
     /**
      * Handle HTTP response and extract data.
      *
-     * @param Response $response HTTP response
-     * @param string $method HTTP method
-     * @param string $url Request URL
-     * @param string $endpoint API endpoint path
+     * @param  Response  $response  HTTP response
+     * @param  string  $method  HTTP method
+     * @param  string  $url  Request URL
+     * @param  string  $endpoint  API endpoint path
      * @return array<string, mixed>|null Response data or null on failure
+     *
      * @throws ApiRateLimitException If rate limited
      * @throws ApiException If API error occurs
      */

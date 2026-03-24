@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Scraper;
 
-use App\Domain\Scraper\Services\ScraperRegistry;
 use App\Models\Supermarket;
+use App\Services\Scraper\ScraperRegistry;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;

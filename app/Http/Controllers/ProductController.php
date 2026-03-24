@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Infrastructure\Scraper\Repositories\AnalyticsRepository;
 use App\Models\NormalizedCategory;
 use App\Models\Product;
+use App\Models\ScrapeRun;
 use App\Models\Supermarket;
+use App\Repositories\Scraper\AnalyticsRepository;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -75,7 +77,7 @@ class ProductController extends Controller
             ->get(['id', 'name']);
 
         // Get last scrape run per supermarket
-        $lastScrapeRuns = \App\Models\ScrapeRun::query()
+        $lastScrapeRuns = ScrapeRun::query()
             ->selectRaw('supermarket, MAX(completed_at) as last_scraped_at')
             ->where('status', 'completed')
             ->whereNotNull('completed_at')
@@ -86,7 +88,7 @@ class ProductController extends Controller
                     $run->supermarket => [
                         'supermarket' => $run->supermarket,
                         // Cast to Carbon and format as ISO 8601 for JavaScript
-                        'last_scraped_at' => \Carbon\Carbon::parse($run->last_scraped_at)->toIso8601String(),
+                        'last_scraped_at' => Carbon::parse($run->last_scraped_at)->toIso8601String(),
                     ],
                 ];
             });

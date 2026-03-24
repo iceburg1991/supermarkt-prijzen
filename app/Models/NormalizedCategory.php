@@ -25,6 +25,7 @@ use Illuminate\Support\Collection;
 class NormalizedCategory extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'name',
         'slug',
