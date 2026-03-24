@@ -2,6 +2,7 @@
 
 namespace Feature\Models;
 
+use App\Enums\ScrapeStatus;
 use App\Models\ScrapeRun;
 use App\Models\Supermarket;
 use Carbon\CarbonImmutable;
@@ -110,7 +111,7 @@ class ScrapeRunTest extends TestCase
 
         $scrapeRun->markCompleted(150);
 
-        $this->assertEquals('completed', $scrapeRun->status);
+        $this->assertEquals(ScrapeStatus::Completed, $scrapeRun->status);
         $this->assertEquals(150, $scrapeRun->product_count);
         $this->assertNotNull($scrapeRun->completed_at);
         $this->assertInstanceOf(CarbonImmutable::class, $scrapeRun->completed_at);
@@ -131,7 +132,7 @@ class ScrapeRunTest extends TestCase
 
         $scrapeRun->markFailed('API connection timeout');
 
-        $this->assertEquals('failed', $scrapeRun->status);
+        $this->assertEquals(ScrapeStatus::Failed, $scrapeRun->status);
         $this->assertEquals('API connection timeout', $scrapeRun->error_message);
         $this->assertNotNull($scrapeRun->completed_at);
         $this->assertInstanceOf(CarbonImmutable::class, $scrapeRun->completed_at);
@@ -149,7 +150,7 @@ class ScrapeRunTest extends TestCase
             'started_at' => now(),
         ]);
 
-        $this->assertEquals('running', $scrapeRun->fresh()->status);
+        $this->assertEquals(ScrapeStatus::Running, $scrapeRun->fresh()->status);
     }
 
     /**
@@ -204,12 +205,12 @@ class ScrapeRunTest extends TestCase
         $supermarket = Supermarket::factory()->create(['identifier' => 'ah']);
 
         $scrapeRun = ScrapeRun::factory()->create(['supermarket' => 'ah', 'status' => 'running']);
-        $this->assertEquals('running', $scrapeRun->status);
+        $this->assertEquals(ScrapeStatus::Running, $scrapeRun->status);
 
         $scrapeRun->update(['status' => 'completed']);
-        $this->assertEquals('completed', $scrapeRun->status);
+        $this->assertEquals(ScrapeStatus::Completed, $scrapeRun->status);
 
         $scrapeRun->update(['status' => 'failed']);
-        $this->assertEquals('failed', $scrapeRun->status);
+        $this->assertEquals(ScrapeStatus::Failed, $scrapeRun->status);
     }
 }

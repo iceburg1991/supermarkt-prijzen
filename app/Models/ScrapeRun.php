@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ScrapeStatus;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,12 +16,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property Carbon $started_at
  * @property Carbon|null $completed_at
  * @property int $product_count
- * @property string $status
+ * @property ScrapeStatus $status
  * @property string|null $error_message
  */
 class ScrapeRun extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'supermarket',
         'started_at',
@@ -34,6 +36,7 @@ class ScrapeRun extends Model
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
         'product_count' => 'integer',
+        'status' => ScrapeStatus::class,
     ];
 
     /**
@@ -50,7 +53,7 @@ class ScrapeRun extends Model
     public function markCompleted(int $productCount): void
     {
         $this->update([
-            'status' => 'completed',
+            'status' => ScrapeStatus::Completed,
             'completed_at' => now(),
             'product_count' => $productCount,
         ]);
@@ -62,9 +65,25 @@ class ScrapeRun extends Model
     public function markFailed(string $errorMessage): void
     {
         $this->update([
-            'status' => 'failed',
+            'status' => ScrapeStatus::Failed,
             'completed_at' => now(),
             'error_message' => $errorMessage,
         ]);
+    }
+
+    /**
+     * Check if scrape is still running.
+     */
+    public function isRunning(): bool
+    {
+        return $this->status === ScrapeStatus::Running;
+    }
+
+    /**
+     * Check if scrape is finished.
+     */
+    public function isFinished(): bool
+    {
+        return $this->status->isFinished();
     }
 }

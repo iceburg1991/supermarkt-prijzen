@@ -3,6 +3,7 @@ import { Head, router } from '@inertiajs/vue3';
 import { RefreshCw, ShoppingCart, Tag, Clock, TrendingUp } from 'lucide-vue-next';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Button } from '@/components/ui/button';
+import { useDateTime } from '@/composables/useDateTime';
 import type { BreadcrumbItem } from '@/types';
 
 interface Supermarket {
@@ -33,35 +34,8 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Supermarkets', href: '#' },
 ];
 
-// Format date
-const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleString('nl-NL', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
-};
-
-// Format relative time
-const formatRelativeTime = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 60) {
-        return `${diffMins} min geleden`;
-    } else if (diffHours < 24) {
-        return `${diffHours} uur geleden`;
-    } else {
-        return `${diffDays} dag${diffDays > 1 ? 'en' : ''} geleden`;
-    }
-};
+// Use DateTime composable for automatic UTC to local timezone conversion
+const { formatDateTime, formatRelative } = useDateTime();
 
 // Format duration
 const formatDuration = (seconds: number): string => {
@@ -176,7 +150,7 @@ const getSupermarketBadgeClass = (identifier: string): string => {
                                     v-if="stat.last_scrape_run"
                                     class="text-sm font-semibold text-gray-900"
                                 >
-                                    {{ formatRelativeTime(stat.last_scrape_run.completed_at) }}
+                                    {{ formatRelative(stat.last_scrape_run.completed_at) }}
                                 </p>
                                 <p v-else class="text-sm text-gray-400">Nog niet gesynchroniseerd</p>
                             </div>
@@ -195,7 +169,7 @@ const getSupermarketBadgeClass = (identifier: string): string => {
                             <div class="flex justify-between">
                                 <span>Datum:</span>
                                 <span class="font-medium text-gray-900">
-                                    {{ formatDate(stat.last_scrape_run.completed_at) }}
+                                    {{ formatDateTime(stat.last_scrape_run.completed_at) }}
                                 </span>
                             </div>
                             <div class="flex justify-between">

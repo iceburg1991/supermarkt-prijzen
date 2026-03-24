@@ -13,6 +13,7 @@ import {
     Filler,
     type ChartOptions,
 } from 'chart.js';
+import { useDateTime } from '@/composables/useDateTime';
 
 // Register Chart.js components
 ChartJS.register(
@@ -37,11 +38,14 @@ const props = defineProps<{
     productName: string;
 }>();
 
+// Use DateTime composable for automatic UTC to local timezone conversion
+const { formatDate } = useDateTime();
+
 // Prepare chart data
 const chartData = computed(() => {
     const labels = props.data.map((point) => {
-        const date = new Date(point.scraped_at);
-        return date.toLocaleDateString('nl-NL', {
+        // Format date with short month and day
+        return formatDate(point.scraped_at, {
             day: 'numeric',
             month: 'short',
         });
@@ -96,7 +100,7 @@ const chartOptions: ChartOptions<'line'> = {
                 label: (context) => {
                     const label = context.dataset.label || '';
                     const value = context.parsed.y;
-                    return `${label}: €${value.toFixed(2)}`;
+                    return value !== null ? `${label}: €${value.toFixed(2)}` : '';
                 },
             },
         },

@@ -77,12 +77,36 @@ class SupermarketController extends Controller
             ->firstOrFail();
 
         try {
+            // Check if there are pending jobs that haven't been processed
+            $pendingJobsCount = \DB::table('jobs')
+                ->whereNull('reserved_at')
+                ->count();
+            
             // Dispatch job to database queue
             \App\Jobs\RunScraper::dispatch($identifier);
             
+            // If there are many pending jobs, warn about queue worker
+            if ($pendingJobsCount > 5) {
+                return redirect()
+                    ->route('supermarkets.dashboard')
+                    ->with('warning', "Sync toegevoegd aan queue voor {$supermarket->name}. Er staan {$pendingJobsCount} jobs in de wachtrij. Zorg dat de queue worker draait: php artisan queue:work");
+            }
+            
+            // Check if queue worker might not be running (jobs older than 5 minutes)
+            $oldestPendingJob = \DB::table('jobs')
+                ->whereNull('reserved_at')
+                ->orderBy('created_at', 'asc')
+                ->first();
+            
+            if ($oldestPendingJob && now()->diffInMinutes($oldestPendingJob->created_at) > 5) {
+                return redirect()
+                    ->route('supermarkets.dashboard')
+                    ->with('error', "Queue worker lijkt niet actief te zijn. Jobs worden niet verwerkt. Start de queue worker met: php artisan queue:work");
+            }
+            
             return redirect()
                 ->route('supermarkets.dashboard')
-                ->with('success', "Sync gestart voor {$supermarket->name}. Start de queue worker met: php artisan queue:work");
+                ->with('success', "Sync gestart voor {$supermarket->name}");
         } catch (\Throwable $e) {
             \Log::error('Failed to dispatch scraper job', [
                 'supermarket' => $identifier,

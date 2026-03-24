@@ -81,7 +81,15 @@ class ProductController extends Controller
             ->whereNotNull('completed_at')
             ->groupBy('supermarket')
             ->get()
-            ->keyBy('supermarket');
+            ->mapWithKeys(function ($run) {
+                return [
+                    $run->supermarket => [
+                        'supermarket' => $run->supermarket,
+                        // Cast to Carbon and format as ISO 8601 for JavaScript
+                        'last_scraped_at' => \Carbon\Carbon::parse($run->last_scraped_at)->toIso8601String(),
+                    ],
+                ];
+            });
 
         return Inertia::render('Products/Index', [
             'products' => $products,

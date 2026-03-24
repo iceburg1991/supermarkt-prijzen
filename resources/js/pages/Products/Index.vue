@@ -3,6 +3,7 @@ import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import ProductController from '@/actions/App/Http/Controllers/ProductController';
+import { useDateTime } from '@/composables/useDateTime';
 import type { BreadcrumbItem } from '@/types';
 
 interface Price {
@@ -10,6 +11,7 @@ interface Price {
     promo_price_cents: number;
     available: boolean;
     badge: string | null;
+    scraped_at?: string;
 }
 
 interface Supermarket {
@@ -60,6 +62,9 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Products', href: ProductController.index().url },
 ];
 
+// Use DateTime composable for automatic UTC to local timezone conversion
+const { formatDate, formatRelative } = useDateTime();
+
 // Local filter state
 const search = ref(props.filters.search || '');
 const selectedSupermarket = ref(props.filters.supermarket || '');
@@ -95,26 +100,6 @@ const clearFilters = () => {
 // Format price
 const formatPrice = (cents: number): string => {
     return `€${(cents / 100).toFixed(2)}`;
-};
-
-// Format last update time
-const formatLastUpdate = (dateString: string): string => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 60) {
-        return `${diffMins} min ago`;
-    } else if (diffHours < 24) {
-        return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-    } else if (diffDays < 7) {
-        return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-    } else {
-        return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
-    }
 };
 
 // Get effective price (promo or regular)
@@ -154,7 +139,7 @@ const hasActiveFilters = computed(() => {
                         >
                             <span class="text-xs font-medium text-gray-500">Albert Heijn</span>
                             <span class="text-sm text-gray-700">
-                                {{ formatLastUpdate(lastScrapeRuns.ah.last_scraped_at) }}
+                                {{ formatRelative(lastScrapeRuns.ah.last_scraped_at) }}
                             </span>
                         </div>
                         <div
@@ -163,7 +148,7 @@ const hasActiveFilters = computed(() => {
                         >
                             <span class="text-xs font-medium text-gray-500">Jumbo</span>
                             <span class="text-sm text-gray-700">
-                                {{ formatLastUpdate(lastScrapeRuns.jumbo.last_scraped_at) }}
+                                {{ formatRelative(lastScrapeRuns.jumbo.last_scraped_at) }}
                             </span>
                         </div>
                     </div>
@@ -377,11 +362,7 @@ const hasActiveFilters = computed(() => {
                                 <!-- Last update -->
                                 <td class="px-4 py-4 text-right text-sm text-muted-foreground">
                                     <div v-if="product.latest_price?.scraped_at">
-                                        {{ new Date(product.latest_price.scraped_at).toLocaleDateString('nl-NL', {
-                                            day: '2-digit',
-                                            month: '2-digit',
-                                            year: 'numeric'
-                                        }) }}
+                                        {{ formatDate(product.latest_price.scraped_at) }}
                                     </div>
                                 </td>
                             </tr>
