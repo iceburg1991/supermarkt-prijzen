@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Jobs\RunScraper;
 use App\Models\Product;
 use App\Models\ScrapeRun;
 use App\Models\Supermarket;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Artisan;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -77,33 +78,42 @@ class SupermarketController extends Controller
             ->firstOrFail();
 
         try {
+            // Check if queue worker might not be running (jobs older than 5 minutes)
+            $oldestPendingJob = \DB::table('jobs')
+                ->whereNull('reserved_at')
+                ->orderBy('created_at', 'asc')
+                ->first();
+
+            if ($oldestPendingJob) {
+                // Convert Unix timestamp to Carbon instance for comparison
+                $jobCreatedAt = Carbon::createFromTimestamp($oldestPendingJob->created_at);
+                $minutesDiff = abs(now()->diffInMinutes($jobCreatedAt));
+
+                if ($minutesDiff > 5) {
+                    // Still dispatch the job, but warn the user
+                    RunScraper::dispatch($identifier);
+
+                    return redirect()
+                        ->route('supermarkets.dashboard')
+                        ->with('error', 'Queue worker lijkt niet actief te zijn. Jobs worden niet verwerkt. Start de queue worker met: php artisan queue:work');
+                }
+            }
+
             // Check if there are pending jobs that haven't been processed
             $pendingJobsCount = \DB::table('jobs')
                 ->whereNull('reserved_at')
                 ->count();
-            
+
             // Dispatch job to database queue
-            \App\Jobs\RunScraper::dispatch($identifier);
-            
+            RunScraper::dispatch($identifier);
+
             // If there are many pending jobs, warn about queue worker
             if ($pendingJobsCount > 5) {
                 return redirect()
                     ->route('supermarkets.dashboard')
                     ->with('warning', "Sync toegevoegd aan queue voor {$supermarket->name}. Er staan {$pendingJobsCount} jobs in de wachtrij. Zorg dat de queue worker draait: php artisan queue:work");
             }
-            
-            // Check if queue worker might not be running (jobs older than 5 minutes)
-            $oldestPendingJob = \DB::table('jobs')
-                ->whereNull('reserved_at')
-                ->orderBy('created_at', 'asc')
-                ->first();
-            
-            if ($oldestPendingJob && now()->diffInMinutes($oldestPendingJob->created_at) > 5) {
-                return redirect()
-                    ->route('supermarkets.dashboard')
-                    ->with('error', "Queue worker lijkt niet actief te zijn. Jobs worden niet verwerkt. Start de queue worker met: php artisan queue:work");
-            }
-            
+
             return redirect()
                 ->route('supermarkets.dashboard')
                 ->with('success', "Sync gestart voor {$supermarket->name}");
@@ -112,7 +122,7 @@ class SupermarketController extends Controller
                 'supermarket' => $identifier,
                 'error' => $e->getMessage(),
             ]);
-            
+
             return redirect()
                 ->route('supermarkets.dashboard')
                 ->with('error', "Kon sync niet starten voor {$supermarket->name}");

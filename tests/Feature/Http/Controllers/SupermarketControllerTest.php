@@ -21,7 +21,7 @@ class SupermarketControllerTest extends TestCase
     /**
      * Test sync dispatches job successfully.
      */
-    public function testSyncDispatchesJobSuccessfully(): void
+    public function test_sync_dispatches_job_successfully(): void
     {
         Queue::fake();
 
@@ -43,7 +43,7 @@ class SupermarketControllerTest extends TestCase
     /**
      * Test sync shows warning when many jobs are pending.
      */
-    public function testSyncShowsWarningWhenManyJobsPending(): void
+    public function test_sync_shows_warning_when_many_jobs_pending(): void
     {
         Queue::fake();
 
@@ -77,7 +77,7 @@ class SupermarketControllerTest extends TestCase
     /**
      * Test sync shows error when queue worker is not running.
      */
-    public function testSyncShowsErrorWhenQueueWorkerNotRunning(): void
+    public function test_sync_shows_error_when_queue_worker_not_running(): void
     {
         Queue::fake();
 
@@ -109,7 +109,7 @@ class SupermarketControllerTest extends TestCase
     /**
      * Test sync fails for disabled supermarket.
      */
-    public function testSyncFailsForDisabledSupermarket(): void
+    public function test_sync_fails_for_disabled_supermarket(): void
     {
         $user = User::factory()->create();
         $supermarket = Supermarket::factory()->create([
@@ -126,7 +126,7 @@ class SupermarketControllerTest extends TestCase
     /**
      * Test sync requires authentication.
      */
-    public function testSyncRequiresAuthentication(): void
+    public function test_sync_requires_authentication(): void
     {
         $supermarket = Supermarket::factory()->create([
             'identifier' => 'ah',
