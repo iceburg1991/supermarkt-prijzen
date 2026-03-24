@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Feature\Scraper;
 
-use App\Domain\Scraper\Contracts\SupermarketScraperInterface;
-use App\Domain\Scraper\Contracts\TokenManagerInterface;
-use App\Domain\Scraper\Services\TokenManager;
-use App\Domain\Scraper\ValueObjects\ScraperConfig;
+use App\Contracts\Scraper\SupermarketScraperInterface;
+use App\Contracts\Scraper\TokenManagerInterface;
+use App\DataTransferObjects\Scraper\ScraperConfig;
 use App\Infrastructure\Scraper\Http\AhScraper;
 use App\Infrastructure\Scraper\Http\BaseScraper;
 use App\Infrastructure\Scraper\Http\JumboScraper;
+use App\Services\Scraper\TokenManager;
 use Illuminate\Support\Collection;
 use Tests\TestCase;
 

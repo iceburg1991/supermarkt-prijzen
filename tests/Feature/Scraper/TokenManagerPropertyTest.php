@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Feature\Scraper;
 
-use App\Domain\Scraper\Exceptions\TokenException;
-use App\Domain\Scraper\Services\TokenManager;
-use App\Domain\Scraper\ValueObjects\TokenData;
+use App\DataTransferObjects\Scraper\TokenData;
+use App\Exceptions\Scraper\TokenException;
+use App\Services\Scraper\TokenManager;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;

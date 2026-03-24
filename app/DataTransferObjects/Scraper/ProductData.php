@@ -75,13 +75,35 @@ class ProductData extends Data
      * Create ProductData from array (backward compatibility wrapper).
      *
      * This method provides backward compatibility with the old ValueObject
-     * implementation that used fromArray(). It wraps Spatie's from() method.
+     * implementation that used fromArray(). It directly calls the constructor
+     * to avoid Spatie Data's heavy metadata processing.
      *
      * @param array<string, mixed> $data Product data array
      * @return self
      */
     public static function fromArray(array $data): self
     {
-        return self::from($data);
+        $scrapedAt = $data['scraped_at'];
+        if ($scrapedAt instanceof \Carbon\CarbonImmutable) {
+            $scrapedAt = Carbon::instance($scrapedAt);
+        } elseif (is_string($scrapedAt)) {
+            $scrapedAt = Carbon::parse($scrapedAt);
+        }
+
+        return new self(
+            productId: $data['product_id'],
+            supermarket: $data['supermarket'],
+            name: $data['name'],
+            quantity: $data['quantity'],
+            priceCents: $data['price_cents'],
+            promoPriceCents: $data['promo_price_cents'],
+            available: $data['available'],
+            badge: $data['badge'],
+            unitPrice: $data['unit_price'],
+            imageUrl: $data['image_url'],
+            productUrl: $data['product_url'],
+            scrapedAt: $scrapedAt,
+            categoryIds: $data['category_ids'] ?? [],
+        );
     }
 }

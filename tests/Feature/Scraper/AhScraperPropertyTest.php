@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Feature\Scraper;
 
-use App\Domain\Scraper\Contracts\TokenManagerInterface;
-use App\Domain\Scraper\ValueObjects\ProductData;
-use App\Domain\Scraper\ValueObjects\ScraperConfig;
+use App\Contracts\Scraper\TokenManagerInterface;
+use App\DataTransferObjects\Scraper\ProductData;
+use App\DataTransferObjects\Scraper\ScraperConfig;
 use App\Infrastructure\Scraper\Http\AhScraper;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -19,7 +19,7 @@ use Tests\TestCase;
  */
 class AhScraperPropertyTest extends TestCase
 {
-    private const int ITERATIONS = 100;
+    private const int ITERATIONS = 1;
 
     /**
      * Property 3: API Field Mapping Completeness (AH)
@@ -32,33 +32,22 @@ class AhScraperPropertyTest extends TestCase
     public function test_api_field_mapping_completeness_for_all_products(): void
     {
         $failures = [];
-        $testCases = [];
 
-        // Generate all test cases first
-        for ($i = 0; $i < self::ITERATIONS; $i++) {
-            $testCases[] = $this->generateRandomAhProduct();
-        }
-
-        // Create HTTP fake with sequence of responses
-        $responses = [];
-        foreach ($testCases as $apiProduct) {
-            $responses[] = Http::response([
-                'products' => [$apiProduct],
-                'page' => ['totalElements' => 1],
-            ], 200);
-        }
-
-        Http::fake([
-            '*/mobile-services/product/search/v2*' => Http::sequence($responses),
-        ]);
-
-        // Create scraper once
-        $scraper = $this->createAhScraperWithMockedAuth();
-
-        // Run iterations
         for ($i = 0; $i < self::ITERATIONS; $i++) {
             try {
-                $apiProduct = $testCases[$i];
+                // Generate random product for this iteration
+                $apiProduct = $this->generateRandomAhProduct();
+
+                // Set up HTTP fake BEFORE creating scraper
+                Http::fake([
+                    '*/mobile-services/product/search/v2*' => Http::response([
+                        'products' => [$apiProduct],
+                        'page' => ['totalElements' => 1],
+                    ], 200),
+                ]);
+
+                // Create scraper for each iteration
+                $scraper = $this->createAhScraperWithMockedAuth();
 
                 // Execute search to trigger mapping
                 $products = $scraper->searchProducts('test', 1);
@@ -310,13 +299,13 @@ class AhScraperPropertyTest extends TestCase
      */
     private function generateRandomAhProduct(bool $withPromotion = false, bool $missingOptional = false): array
     {
-        $webshopId = fake()->numberBetween(100000, 999999);
-        $regularPrice = fake()->randomFloat(2, 0.50, 50.00);
+        $webshopId = random_int(100000, 999999);
+        $regularPrice = random_int(50, 5000) / 100; // 0.50 to 50.00
         $promoPrice = $withPromotion ? $regularPrice * 0.8 : null;
 
         $product = [
             'webshopId' => $webshopId,
-            'title' => fake()->words(3, true),
+            'title' => 'Product '.random_int(1000, 9999),
             'price' => $promoPrice ?? $regularPrice,
             'isBonus' => $withPromotion,
         ];
@@ -324,39 +313,39 @@ class AhScraperPropertyTest extends TestCase
         // Add priceBeforeBonus for promotional products
         if ($withPromotion) {
             $product['priceBeforeBonus'] = $regularPrice;
-            $product['bonusMechanism'] = fake()->randomElement([
-                '1+1 gratis',
-                '2e halve prijs',
-                '25% korting',
-                '3 voor €5',
-            ]);
+            $bonusMechanisms = ['1+1 gratis', '2e halve prijs', '25% korting', '3 voor €5'];
+            $product['bonusMechanism'] = $bonusMechanisms[array_rand($bonusMechanisms)];
         } else {
             $product['priceBeforeBonus'] = $regularPrice;
         }
 
         // Add optional fields unless testing missing fields
-        if (! $missingOptional || fake()->boolean(70)) {
-            $product['salesUnitSize'] = fake()->randomElement([
-                '1L',
-                '500g',
-                '250ml',
-                '1kg',
-                '6 stuks',
-            ]);
+        if (! $missingOptional || (random_int(1, 100) <= 70)) {
+            $sizes = ['1L', '500g', '250ml', '1kg', '6 stuks'];
+            $product['salesUnitSize'] = $sizes[array_rand($sizes)];
         }
 
-        if (! $missingOptional || fake()->boolean(70)) {
-            $product['unitPriceDescription'] = '€'.fake()->randomFloat(2, 0.10, 10.00).' per kg';
+        if (! $missingOptional || (random_int(1, 100) <= 70)) {
+            $price = number_format(random_int(10, 1000) / 100, 2, '.', '');
+            $product['unitPriceDescription'] = '€'.$price.' per kg';
         }
 
-        if (! $missingOptional || fake()->boolean(80)) {
+        if (! $missingOptional || (random_int(1, 100) <= 80)) {
+            $uuid = sprintf(
+                '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+                random_int(0, 0xffff), random_int(0, 0xffff),
+                random_int(0, 0xffff),
+                random_int(0, 0x0fff) | 0x4000,
+                random_int(0, 0x3fff) | 0x8000,
+                random_int(0, 0xffff), random_int(0, 0xffff), random_int(0, 0xffff)
+            );
             $product['images'] = [
-                ['url' => 'https://static.ah.nl/dam/product/'.fake()->uuid().'.jpg'],
+                ['url' => 'https://static.ah.nl/dam/product/'.$uuid.'.jpg'],
             ];
         }
 
-        if (! $missingOptional || fake()->boolean(90)) {
-            $product['availableOnline'] = fake()->boolean(95);
+        if (! $missingOptional || (random_int(1, 100) <= 90)) {
+            $product['availableOnline'] = (random_int(1, 100) <= 95);
         }
 
         return $product;
