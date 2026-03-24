@@ -25,25 +25,25 @@ class AppServiceProvider extends ServiceProvider
     {
         // Bind TokenManager interface
         $this->app->bind(
-            \App\Domain\Scraper\Contracts\TokenManagerInterface::class,
-            \App\Domain\Scraper\Services\TokenManager::class
+            \App\Contracts\Scraper\TokenManagerInterface::class,
+            \App\Services\Scraper\TokenManager::class
         );
 
         // Bind ScraperRegistry as singleton
-        $this->app->singleton(\App\Domain\Scraper\Services\ScraperRegistry::class);
+        $this->app->singleton(\App\Services\Scraper\ScraperRegistry::class);
 
         // Bind AhScraper with its dependencies
         $this->app->bind(\App\Infrastructure\Scraper\Http\AhScraper::class, function ($app) {
             return new \App\Infrastructure\Scraper\Http\AhScraper(
-                \App\Domain\Scraper\ValueObjects\ScraperConfig::forAh(),
-                $app->make(\App\Domain\Scraper\Contracts\TokenManagerInterface::class)
+                \App\DataTransferObjects\Scraper\ScraperConfig::forAh(),
+                $app->make(\App\Contracts\Scraper\TokenManagerInterface::class)
             );
         });
 
         // Bind JumboScraper with its dependencies
         $this->app->bind(\App\Infrastructure\Scraper\Http\JumboScraper::class, function ($app) {
             return new \App\Infrastructure\Scraper\Http\JumboScraper(
-                \App\Domain\Scraper\ValueObjects\ScraperConfig::forJumbo()
+                \App\DataTransferObjects\Scraper\ScraperConfig::forJumbo()
             );
         });
     }
@@ -62,7 +62,7 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function discoverScrapers(): void
     {
-        $registry = $this->app->make(\App\Domain\Scraper\Services\ScraperRegistry::class);
+        $registry = $this->app->make(\App\Services\Scraper\ScraperRegistry::class);
         $registry->discover();
     }
 

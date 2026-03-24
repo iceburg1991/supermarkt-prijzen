@@ -2,25 +2,27 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Scraper\ValueObjects;
+namespace App\DataTransferObjects\Scraper;
+
+use Spatie\LaravelData\Data;
 
 /**
- * Immutable value object representing scraper configuration.
+ * Data transfer object representing scraper configuration.
  *
  * Contains all configuration needed for a specific supermarket scraper
  * including API endpoints, headers, and rate limiting settings.
  */
-readonly class ScraperConfig
+class ScraperConfig extends Data
 {
     /**
      * Create a new ScraperConfig instance.
      *
-     * @param string $identifier Supermarket identifier (e.g., 'ah', 'jumbo')
-     * @param string $baseUrl API base URL
-     * @param array<string, string> $headers HTTP headers to include in requests
-     * @param int $rateLimitDelay Delay between requests in milliseconds
-     * @param int $maxRetries Maximum number of retry attempts
-     * @param int $timeout Request timeout in seconds
+     * @param  string  $identifier  Supermarket identifier (e.g., 'ah', 'jumbo')
+     * @param  string  $baseUrl  API base URL
+     * @param  array<string, string>  $headers  HTTP headers to include in requests
+     * @param  int  $rateLimitDelay  Delay between requests in milliseconds
+     * @param  int  $maxRetries  Maximum number of retry attempts
+     * @param  int  $timeout  Request timeout in seconds
      */
     public function __construct(
         public string $identifier,
@@ -33,8 +35,6 @@ readonly class ScraperConfig
 
     /**
      * Create configuration for Albert Heijn scraper.
-     *
-     * @return self
      */
     public static function forAh(): self
     {
@@ -50,8 +50,6 @@ readonly class ScraperConfig
 
     /**
      * Create configuration for Jumbo scraper.
-     *
-     * @return self
      */
     public static function forJumbo(): self
     {

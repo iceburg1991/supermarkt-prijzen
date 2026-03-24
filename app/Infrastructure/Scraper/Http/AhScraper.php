@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Scraper\Http;
 
-use App\Domain\Scraper\Contracts\TokenManagerInterface;
-use App\Domain\Scraper\ValueObjects\ProductData;
-use App\Domain\Scraper\ValueObjects\ScraperConfig;
+use App\Contracts\Scraper\TokenManagerInterface;
+use App\DataTransferObjects\Scraper\ProductData;
+use App\DataTransferObjects\Scraper\ScraperConfig;
 use Illuminate\Support\Collection;
 
 /**

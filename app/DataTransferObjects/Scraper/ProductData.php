@@ -2,18 +2,20 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Scraper\ValueObjects;
+namespace App\DataTransferObjects\Scraper;
 
 use Carbon\Carbon;
-use Carbon\CarbonImmutable;
+use Spatie\LaravelData\Attributes\WithCast;
+use Spatie\LaravelData\Casts\DateTimeInterfaceCast;
+use Spatie\LaravelData\Data;
 
 /**
- * Immutable value object representing product data from scraper.
+ * Data transfer object representing product data from scraper.
  *
  * Contains all product information including pricing, availability,
  * and metadata scraped from supermarket APIs.
  */
-readonly class ProductData
+class ProductData extends Data
 {
     /**
      * Create a new ProductData instance.
@@ -30,7 +32,7 @@ readonly class ProductData
      * @param  string  $imageUrl  Product image URL
      * @param  string  $productUrl  Product page URL
      * @param  Carbon  $scrapedAt  Timestamp when data was scraped
-     * @param  array<string>  $categoryIds  Category IDs this product belongs to (optional)
+     * @param  array<string>  $categoryIds  Category IDs this product belongs to
      */
     public function __construct(
         public string $productId,
@@ -44,40 +46,10 @@ readonly class ProductData
         public string $unitPrice,
         public string $imageUrl,
         public string $productUrl,
+        #[WithCast(DateTimeInterfaceCast::class, format: 'Y-m-d H:i:s')]
         public Carbon $scrapedAt,
         public array $categoryIds = [],
     ) {}
-
-    /**
-     * Create ProductData from array.
-     *
-     * @param  array<string, mixed>  $data  Product data array
-     */
-    public static function fromArray(array $data): self
-    {
-        $scrapedAt = $data['scraped_at'] ?? now();
-
-        // Convert CarbonImmutable to Carbon if needed
-        if ($scrapedAt instanceof CarbonImmutable) {
-            $scrapedAt = Carbon::instance($scrapedAt);
-        }
-
-        return new self(
-            productId: $data['product_id'],
-            supermarket: $data['supermarket'],
-            name: $data['name'],
-            quantity: $data['quantity'] ?? '',
-            priceCents: $data['price_cents'],
-            promoPriceCents: $data['promo_price_cents'] ?? 0,
-            available: $data['available'] ?? true,
-            badge: $data['badge'] ?? '',
-            unitPrice: $data['unit_price'] ?? '',
-            imageUrl: $data['image_url'] ?? '',
-            productUrl: $data['product_url'] ?? '',
-            scrapedAt: $scrapedAt,
-            categoryIds: $data['category_ids'] ?? [],
-        );
-    }
 
     /**
      * Check if product has an active promotion.
@@ -97,5 +69,19 @@ readonly class ProductData
     public function getEffectivePrice(): int
     {
         return $this->hasPromotion() ? $this->promoPriceCents : $this->priceCents;
+    }
+
+    /**
+     * Create ProductData from array (backward compatibility wrapper).
+     *
+     * This method provides backward compatibility with the old ValueObject
+     * implementation that used fromArray(). It wraps Spatie's from() method.
+     *
+     * @param array<string, mixed> $data Product data array
+     * @return self
+     */
+    public static function fromArray(array $data): self
+    {
+        return self::from($data);
     }
 }

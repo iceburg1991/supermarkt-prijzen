@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Scraper\Services;
+namespace App\Services\Scraper;
 
-use App\Domain\Scraper\Contracts\TokenManagerInterface;
-use App\Domain\Scraper\Exceptions\TokenException;
-use App\Domain\Scraper\Exceptions\TokenExpiredException;
-use App\Domain\Scraper\ValueObjects\TokenData;
+use App\Contracts\Scraper\TokenManagerInterface;
+use App\DataTransferObjects\Scraper\TokenData;
+use App\Exceptions\Scraper\TokenException;
+use App\Exceptions\Scraper\TokenExpiredException;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;

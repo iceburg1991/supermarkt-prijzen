@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Scraper\Services;
+namespace App\Services\Scraper;
 
 use App\Infrastructure\Scraper\Repositories\CategoryRepository;
 use App\Models\Category;

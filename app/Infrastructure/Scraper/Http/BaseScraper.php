@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Scraper\Http;
 
-use App\Domain\Scraper\Contracts\SupermarketScraperInterface;
-use App\Domain\Scraper\Exceptions\ApiException;
-use App\Domain\Scraper\Exceptions\ApiRateLimitException;
-use App\Domain\Scraper\ValueObjects\ScraperConfig;
+use App\Contracts\Scraper\SupermarketScraperInterface;
+use App\DataTransferObjects\Scraper\ScraperConfig;
+use App\Exceptions\Scraper\ApiException;
+use App\Exceptions\Scraper\ApiRateLimitException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;

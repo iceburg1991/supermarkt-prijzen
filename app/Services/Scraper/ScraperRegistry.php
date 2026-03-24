@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Scraper\Services;
+namespace App\Services\Scraper;
 
-use App\Domain\Scraper\Contracts\SupermarketScraperInterface;
+use App\Contracts\Scraper\SupermarketScraperInterface;
 use App\Models\Supermarket;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\App;

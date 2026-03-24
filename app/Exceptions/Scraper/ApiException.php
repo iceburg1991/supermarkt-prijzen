@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domain\Scraper\Exceptions;
+namespace App\Exceptions\Scraper;
 
 /**
  * Exception thrown when API requests fail.

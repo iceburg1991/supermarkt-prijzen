@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Scraper\Repositories;
 
-use App\Domain\Scraper\Services\CategoryMatcher;
-use App\Domain\Scraper\ValueObjects\ProductData;
+use App\DataTransferObjects\Scraper\ProductData;
 use App\Models\Product;
+use App\Services\Scraper\CategoryMatcher;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 

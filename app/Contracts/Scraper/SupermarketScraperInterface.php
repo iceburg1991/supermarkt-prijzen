@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Scraper\Contracts;
+namespace App\Contracts\Scraper;
 
 use Illuminate\Support\Collection;
 

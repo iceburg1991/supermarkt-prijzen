@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Scraper\Contracts;
+namespace App\Contracts\Scraper;
 
-use App\Domain\Scraper\ValueObjects\TokenData;
+use App\DataTransferObjects\Scraper\TokenData;
 
 /**
  * Interface for OAuth token management.

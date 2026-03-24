@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domain\Scraper\Services;
+namespace App\Services\Scraper;
 
 use App\Models\NormalizedCategory;
 use Illuminate\Support\Str;

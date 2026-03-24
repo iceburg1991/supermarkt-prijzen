@@ -2,17 +2,20 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Scraper\ValueObjects;
+namespace App\DataTransferObjects\Scraper;
 
 use Carbon\Carbon;
+use Spatie\LaravelData\Attributes\WithCast;
+use Spatie\LaravelData\Casts\DateTimeInterfaceCast;
+use Spatie\LaravelData\Data;
 
 /**
- * Immutable value object representing OAuth token data.
+ * Data transfer object representing OAuth token data.
  *
  * Contains access token, refresh token, and expiry information
  * for authenticated API access.
  */
-readonly class TokenData
+class TokenData extends Data
 {
     /**
      * Create a new TokenData instance.
@@ -24,6 +27,7 @@ readonly class TokenData
     public function __construct(
         public string $accessToken,
         public ?string $refreshToken,
+        #[WithCast(DateTimeInterfaceCast::class, format: 'Y-m-d H:i:s')]
         public ?Carbon $expiresAt,
     ) {}
 
