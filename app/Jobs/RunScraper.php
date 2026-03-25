@@ -2,12 +2,13 @@
 
 namespace App\Jobs;
 
+use App\Actions\ExecuteScrapeRun;
+use App\Services\Scraper\ScraperRegistry;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 
 class RunScraper implements ShouldQueue
@@ -24,25 +25,33 @@ class RunScraper implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(): void
+    public function handle(ScraperRegistry $registry, ExecuteScrapeRun $action): void
     {
-        $command = match ($this->supermarket) {
-            'ah' => 'scrape:ah',
-            'jumbo' => 'scrape:jumbo',
-            default => null,
-        };
+        Log::channel('scraper')->info('Starting scraper job', [
+            'supermarket' => $this->supermarket,
+        ]);
 
-        if ($command) {
-            Log::channel('scraper')->info('Starting scraper job', [
-                'supermarket' => $this->supermarket,
-                'command' => $command,
-            ]);
+        try {
+            // Get scraper instance
+            $scraper = $registry->get($this->supermarket);
 
-            Artisan::call($command);
+            // Execute scrape run directly (not via Artisan command)
+            $scrapeRun = $action->execute($scraper, null, 100);
 
             Log::channel('scraper')->info('Scraper job completed', [
                 'supermarket' => $this->supermarket,
+                'scrape_run_id' => $scrapeRun->id,
+                'status' => $scrapeRun->status->value,
+                'products_scraped' => $scrapeRun->products_scraped,
             ]);
+        } catch (\Throwable $e) {
+            Log::channel('scraper-errors')->error('Scraper job failed', [
+                'supermarket' => $this->supermarket,
+                'error' => $e->getMessage(),
+                'exception_class' => get_class($e),
+            ]);
+
+            throw $e;
         }
     }
 }

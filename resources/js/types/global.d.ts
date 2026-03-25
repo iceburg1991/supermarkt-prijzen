@@ -31,3 +31,13 @@ declare module 'vue' {
         $headManager: ReturnType<typeof createHeadManager>;
     }
 }
+
+// Laravel Echo global type declaration
+import type Echo from 'laravel-echo';
+
+declare global {
+    interface Window {
+        Echo: Echo;
+        Pusher: any;
+    }
+}

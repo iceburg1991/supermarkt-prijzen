@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
 import { RefreshCw, ShoppingCart, Tag, Clock, TrendingUp } from 'lucide-vue-next';
+import { onMounted, onUnmounted } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Button } from '@/components/ui/button';
 import { useDateTime } from '@/composables/useDateTime';
@@ -55,6 +56,31 @@ const getSupermarketBadgeClass = (identifier: string): string => {
         ? 'bg-blue-100 text-blue-800'
         : 'bg-yellow-400 text-gray-900';
 };
+
+// Listen for scrape completion events
+onMounted(() => {
+    if (window.Echo) {
+        console.log('Echo: subscribing to private-scrape-runs channel');
+
+        window.Echo.private('scrape-runs')
+            .listen('.scrape.completed', (event: any) => {
+                console.log('Scrape completed:', event);
+                router.reload({ only: ['statistics'] });
+            })
+            .error((error: any) => {
+                console.error('Echo channel error:', error);
+            });
+    } else {
+        console.warn('Echo is not available');
+    }
+});
+
+// Clean up listener when component unmounts
+onUnmounted(() => {
+    if (window.Echo) {
+        window.Echo.leave('scrape-runs');
+    }
+});
 </script>
 
 <template>

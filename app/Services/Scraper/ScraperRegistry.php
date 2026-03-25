@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Scraper;
 
 use App\Contracts\Scraper\SupermarketScraperInterface;
+use App\DataTransferObjects\Scraper\ScraperConfig;
 use App\Models\Supermarket;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\App;
@@ -47,7 +48,14 @@ class ScraperRegistry
 
         $scraperClass = $this->scrapers[$identifier];
 
-        return App::make($scraperClass);
+        // Create appropriate config based on identifier
+        $config = match ($identifier) {
+            'ah' => ScraperConfig::forAh(),
+            'jumbo' => ScraperConfig::forJumbo(),
+            default => throw new \InvalidArgumentException("No configuration found for identifier: {$identifier}"),
+        };
+
+        return App::make($scraperClass, ['config' => $config]);
     }
 
     /**
@@ -58,7 +66,21 @@ class ScraperRegistry
     public function all(): Collection
     {
         return collect($this->scrapers)
-            ->map(fn (string $class) => App::make($class));
+            ->map(function (string $class, string $identifier) {
+                // Create appropriate config based on identifier
+                $config = match ($identifier) {
+                    'ah' => ScraperConfig::forAh(),
+                    'jumbo' => ScraperConfig::forJumbo(),
+                    default => null,
+                };
+
+                if ($config === null) {
+                    return null;
+                }
+
+                return App::make($class, ['config' => $config]);
+            })
+            ->filter();
     }
 
     /**
@@ -72,11 +94,11 @@ class ScraperRegistry
     /**
      * Auto-discover scrapers implementing SupermarketScraperInterface.
      *
-     * Scans the Infrastructure/Scraper/Http directory for scraper classes.
+     * Scans the Http/Scrapers directory for scraper classes.
      */
     public function discover(): void
     {
-        $scraperPath = app_path('Infrastructure/Scraper/Http');
+        $scraperPath = app_path('Http/Scrapers');
 
         if (! is_dir($scraperPath)) {
             return;
@@ -92,7 +114,7 @@ class ScraperRegistry
                 continue;
             }
 
-            $fullClassName = "App\\Infrastructure\\Scraper\\Http\\{$className}";
+            $fullClassName = "App\\Http\\Scrapers\\{$className}";
 
             if (! class_exists($fullClassName)) {
                 continue;
@@ -104,16 +126,11 @@ class ScraperRegistry
                 continue;
             }
 
-            // Create instance to get identifier
-            try {
-                $instance = App::make($fullClassName);
-                $identifier = $instance->getIdentifier();
+            // Map class name to identifier without instantiation
+            // AhScraper -> ah, JumboScraper -> jumbo
+            $identifier = strtolower(str_replace('Scraper', '', $className));
 
-                $this->register($identifier, $fullClassName);
-            } catch (\Throwable $e) {
-                // Skip if instantiation fails
-                continue;
-            }
+            $this->register($identifier, $fullClassName);
         }
     }
 
@@ -130,6 +147,20 @@ class ScraperRegistry
 
         return collect($this->scrapers)
             ->filter(fn (string $class, string $identifier) => in_array($identifier, $enabledIdentifiers))
-            ->map(fn (string $class) => App::make($class));
+            ->map(function (string $class, string $identifier) {
+                // Create appropriate config based on identifier
+                $config = match ($identifier) {
+                    'ah' => ScraperConfig::forAh(),
+                    'jumbo' => ScraperConfig::forJumbo(),
+                    default => null,
+                };
+
+                if ($config === null) {
+                    return null;
+                }
+
+                return App::make($class, ['config' => $config]);
+            })
+            ->filter();
     }
 }

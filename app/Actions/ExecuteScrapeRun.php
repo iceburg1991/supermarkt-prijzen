@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions;
 
 use App\Contracts\Scraper\SupermarketScraperInterface;
+use App\Events\ScrapeRunCompleted;
 use App\Models\ScrapeRun;
 use App\Notifications\ScrapeRunFailed;
 use App\Repositories\Scraper\PriceRepository;
@@ -162,7 +163,22 @@ class ExecuteScrapeRun
             }
         }
 
-        return $scrapeRun->fresh();
+        // Broadcast completion event OUTSIDE the main try-catch
+        // so broadcasting failures don't mark the scrape as failed
+        $scrapeRun = $scrapeRun->fresh();
+
+        if ($scrapeRun->status->value === 'completed') {
+            try {
+                event(new ScrapeRunCompleted($scrapeRun));
+            } catch (\Throwable $e) {
+                Log::channel('scraper-errors')->warning('Failed to broadcast ScrapeRunCompleted event', [
+                    'scrape_run_id' => $scrapeRun->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $scrapeRun;
     }
 
     /**

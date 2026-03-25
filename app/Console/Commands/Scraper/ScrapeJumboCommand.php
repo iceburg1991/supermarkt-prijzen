@@ -31,11 +31,11 @@ class ScrapeJumboCommand extends Command
 
             $scrapeRun = $action->execute($scraper, $category, $maxResults);
 
-            if ($scrapeRun->status === 'completed') {
+            if ($scrapeRun->status->value === 'completed') {
                 $duration = round($startTime->floatDiffInSeconds(now()), 2);
 
                 $this->info('✓ Scrape completed successfully!');
-                $this->info("  Products scraped: {$scrapeRun->product_count}");
+                $this->info("  Products scraped: {$scrapeRun->products_scraped}");
                 $this->info("  Duration: {$duration}s");
 
                 return Command::SUCCESS;
