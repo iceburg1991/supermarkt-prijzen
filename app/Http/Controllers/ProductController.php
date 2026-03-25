@@ -34,7 +34,7 @@ class ProductController extends Controller
         // Build query
         $query = Product::query()
             ->with(['supermarketModel'])
-            ->orderBy('name');
+            ->orderByDesc('updated_at');
 
         // Apply filters
         if ($search) {
@@ -52,8 +52,18 @@ class ProductController extends Controller
         }
 
         if ($promotionsOnly) {
-            $query->whereHas('latestPrice', function ($q) {
-                $q->where('promo_price_cents', '>', 0);
+            $query->whereExists(function ($sub) {
+                $sub->selectRaw(1)
+                    ->from('prices')
+                    ->whereColumn('prices.product_id', 'products.product_id')
+                    ->whereColumn('prices.supermarket', 'products.supermarket')
+                    ->where(function ($q) {
+                        $q->where(function ($q2) {
+                            $q2->whereNotNull('prices.badge')->where('prices.badge', '!=', '');
+                        })->orWhere('prices.promo_price_cents', '>', 0);
+                    })
+                    ->orderByDesc('prices.scraped_at')
+                    ->limit(1);
             });
         }
 

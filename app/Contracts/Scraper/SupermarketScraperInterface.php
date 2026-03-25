@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Contracts\Scraper;
 
-use App\Domain\Scraper\ValueObjects\ProductData;
+use App\DataTransferObjects\Scraper\ProductData;
 use Illuminate\Support\Collection;
 
 /**

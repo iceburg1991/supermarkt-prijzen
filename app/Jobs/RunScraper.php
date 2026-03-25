@@ -36,7 +36,8 @@ class RunScraper implements ShouldQueue
             $scraper = $registry->get($this->supermarket);
 
             // Execute scrape run directly (not via Artisan command)
-            $scrapeRun = $action->execute($scraper, null, 100);
+            $maxResults = (int) config('scrapers.max_results', 1000);
+            $scrapeRun = $action->execute($scraper, null, $maxResults);
 
             Log::channel('scraper')->info('Scraper job completed', [
                 'supermarket' => $this->supermarket,
