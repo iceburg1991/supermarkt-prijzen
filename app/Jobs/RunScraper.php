@@ -16,6 +16,17 @@ class RunScraper implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
+     * The number of seconds the job can run before timing out.
+     * 5 minutes to allow for scrape runs with rate limiting.
+     */
+    public int $timeout = 300;
+
+    /**
+     * The number of times the job may be attempted.
+     */
+    public int $tries = 1;
+
+    /**
      * Create a new job instance.
      */
     public function __construct(

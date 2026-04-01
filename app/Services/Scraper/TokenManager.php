@@ -8,6 +8,7 @@ use App\Contracts\Scraper\TokenManagerInterface;
 use App\DataTransferObjects\Scraper\TokenData;
 use App\Exceptions\Scraper\TokenException;
 use App\Exceptions\Scraper\TokenExpiredException;
+use App\Models\ScraperToken;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
@@ -239,13 +240,23 @@ class TokenManager implements TokenManagerInterface
     }
 
     /**
-     * Get refresh token from .env configuration.
+     * Get refresh token from database or .env configuration.
+     *
+     * Priority: Database > .env (encrypted) > .env (plain)
      *
      * @param  string  $supermarket  Supermarket identifier
-     * @return string|null Encrypted refresh token or null if not configured
+     * @return string|null Refresh token or null if not configured
      */
     public function getRefreshToken(string $supermarket): ?string
     {
+        // First, try to get from database (preferred)
+        $scraperToken = ScraperToken::forSupermarket($supermarket);
+
+        if ($scraperToken !== null) {
+            return $scraperToken->refresh_token;
+        }
+
+        // Fallback to .env configuration
         $encryptedToken = config("scrapers.{$supermarket}.refresh_token");
 
         if ($encryptedToken === null) {
@@ -267,5 +278,29 @@ class TokenManager implements TokenManagerInterface
 
         // Return as-is if not encrypted (for backward compatibility)
         return $encryptedToken;
+    }
+
+    /**
+     * Store refresh token in database.
+     *
+     * @param  string  $supermarket  Supermarket identifier
+     * @param  string  $refreshToken  Plain text refresh token
+     */
+    public function storeRefreshToken(string $supermarket, string $refreshToken): void
+    {
+        ScraperToken::storeToken($supermarket, $refreshToken);
+
+        Log::info("Stored refresh token for {$supermarket} in database");
+    }
+
+    /**
+     * Check if a supermarket has a refresh token configured.
+     *
+     * @param  string  $supermarket  Supermarket identifier
+     * @return bool True if refresh token exists
+     */
+    public function hasRefreshToken(string $supermarket): bool
+    {
+        return $this->getRefreshToken($supermarket) !== null;
     }
 }

@@ -8,6 +8,7 @@ use App\DataTransferObjects\Scraper\TokenData;
 use App\Exceptions\Scraper\TokenException;
 use App\Services\Scraper\TokenManager;
 use Carbon\Carbon;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Crypt;
@@ -21,6 +22,8 @@ use Tests\TestCase;
  */
 class TokenManagerPropertyTest extends TestCase
 {
+    use RefreshDatabase;
+
     private const int ITERATIONS = 10; // Reduced for speed
 
     protected function setUp(): void
