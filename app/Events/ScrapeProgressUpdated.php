@@ -5,14 +5,15 @@ namespace App\Events;
 use App\Models\ScrapeRun;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
 /**
  * Broadcast scrape progress updates to the frontend.
+ * Uses ShouldBroadcastNow to send immediately without queueing.
  */
-class ScrapeProgressUpdated implements ShouldBroadcast
+class ScrapeProgressUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import { RefreshCw, ShoppingCart, Tag, Clock, TrendingUp } from 'lucide-vue-next';
-import { onMounted, onUnmounted } from 'vue';
+import { RefreshCw, ShoppingCart, Tag, Clock, TrendingUp, Loader2 } from 'lucide-vue-next';
+import { onMounted, onUnmounted, ref } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Button } from '@/components/ui/button';
 import { useDateTime } from '@/composables/useDateTime';
@@ -27,6 +27,13 @@ interface SupermarketStatistics {
     last_scrape_run: LastScrapeRun | null;
 }
 
+interface ScrapeProgress {
+    supermarket: string;
+    products_scraped: number;
+    total_products: number | null;
+    percentage: number | null;
+}
+
 const props = defineProps<{
     statistics: SupermarketStatistics[];
 }>();
@@ -38,6 +45,10 @@ const breadcrumbs: BreadcrumbItem[] = [
 // Use DateTime composable for automatic UTC to local timezone conversion
 const { formatDateTime, formatRelative } = useDateTime();
 
+// Track syncing state and progress per supermarket
+const syncingState = ref<Record<string, boolean>>({});
+const progressState = ref<Record<string, ScrapeProgress>>({});
+
 // Format duration
 const formatDuration = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -47,7 +58,24 @@ const formatDuration = (seconds: number): string => {
 
 // Sync supermarket
 const syncSupermarket = (identifier: string) => {
+    syncingState.value[identifier] = true;
+    progressState.value[identifier] = {
+        supermarket: identifier,
+        products_scraped: 0,
+        total_products: null,
+        percentage: null,
+    };
     router.post(`/supermarkets/${identifier}/sync`);
+};
+
+// Check if supermarket is syncing
+const isSyncing = (identifier: string): boolean => {
+    return syncingState.value[identifier] === true;
+};
+
+// Get progress for supermarket
+const getProgress = (identifier: string): ScrapeProgress | null => {
+    return progressState.value[identifier] || null;
 };
 
 // Get supermarket badge color
@@ -57,14 +85,29 @@ const getSupermarketBadgeClass = (identifier: string): string => {
         : 'bg-yellow-400 text-gray-900';
 };
 
-// Listen for scrape completion events
+// Listen for scrape events
 onMounted(() => {
     if (window.Echo) {
-        console.log('Echo: subscribing to private-scrape-runs channel');
+        console.log('Echo: subscribing to channels');
 
+        // Listen for progress updates (public channel)
+        window.Echo.channel('scrape-progress')
+            .listen('.progress.updated', (event: any) => {
+                console.log('Progress update:', event);
+                progressState.value[event.supermarket] = {
+                    supermarket: event.supermarket,
+                    products_scraped: event.products_scraped,
+                    total_products: event.total_pages,
+                    percentage: event.percentage,
+                };
+            });
+
+        // Listen for completion (private channel)
         window.Echo.private('scrape-runs')
             .listen('.scrape.completed', (event: any) => {
                 console.log('Scrape completed:', event);
+                syncingState.value[event.supermarket] = false;
+                delete progressState.value[event.supermarket];
                 router.reload({ only: ['statistics'] });
             })
             .error((error: any) => {
@@ -75,9 +118,10 @@ onMounted(() => {
     }
 });
 
-// Clean up listener when component unmounts
+// Clean up listeners when component unmounts
 onUnmounted(() => {
     if (window.Echo) {
+        window.Echo.leave('scrape-progress');
         window.Echo.leave('scrape-runs');
     }
 });
@@ -122,10 +166,31 @@ onUnmounted(() => {
                             size="sm"
                             variant="outline"
                             class="gap-2"
+                            :disabled="isSyncing(stat.supermarket.identifier)"
                         >
-                            <RefreshCw class="h-4 w-4" />
-                            Sync Nu
+                            <Loader2 v-if="isSyncing(stat.supermarket.identifier)" class="h-4 w-4 animate-spin" />
+                            <RefreshCw v-else class="h-4 w-4" />
+                            {{ isSyncing(stat.supermarket.identifier) ? 'Bezig...' : 'Sync Nu' }}
                         </Button>
+                    </div>
+
+                    <!-- Progress Bar (shown during sync) -->
+                    <div
+                        v-if="isSyncing(stat.supermarket.identifier)"
+                        class="mb-6 rounded-lg bg-blue-50 p-4 border border-blue-200"
+                    >
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-blue-700">Synchroniseren...</span>
+                            <span class="text-sm text-blue-600">
+                                {{ getProgress(stat.supermarket.identifier)?.products_scraped || 0 }} producten
+                            </span>
+                        </div>
+                        <div class="w-full bg-blue-200 rounded-full h-2">
+                            <div
+                                class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                :style="{ width: `${getProgress(stat.supermarket.identifier)?.percentage || 0}%` }"
+                            />
+                        </div>
                     </div>
 
                     <!-- Stats Grid -->

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions;
 
 use App\Contracts\Scraper\SupermarketScraperInterface;
+use App\Events\ScrapeProgressUpdated;
 use App\Events\ScrapeRunCompleted;
 use App\Models\ScrapeRun;
 use App\Notifications\ScrapeRunFailed;
@@ -72,6 +73,9 @@ class ExecuteScrapeRun
                 'scrape_run_id' => $scrapeRun->id,
             ]);
 
+            // Broadcast initial progress
+            $this->broadcastProgress($scrapeRun, 0, 0, null);
+
             // Fetch products
             Log::channel('scraper')->info('Fetching products', [
                 'supermarket' => $identifier,
@@ -92,6 +96,7 @@ class ExecuteScrapeRun
 
             $productCount = 0;
             $errorCount = 0;
+            $totalProducts = $products->count();
 
             foreach ($products as $productData) {
                 try {
@@ -112,8 +117,10 @@ class ExecuteScrapeRun
 
                     $productCount++;
 
-                    // OPTIONAL: Category mapping happens in ProductRepository->upsert()
-                    // It's wrapped in try-catch there, so failures won't block storage
+                    // Broadcast progress every 50 products
+                    if ($productCount % 50 === 0) {
+                        $this->broadcastProgress($scrapeRun, $productCount, $productCount, $totalProducts);
+                    }
 
                 } catch (\Throwable $e) {
                     $errorCount++;
@@ -179,6 +186,21 @@ class ExecuteScrapeRun
         }
 
         return $scrapeRun;
+    }
+
+    /**
+     * Broadcast progress update to frontend.
+     */
+    private function broadcastProgress(ScrapeRun $scrapeRun, int $productsScraped, int $currentPage, ?int $totalProducts): void
+    {
+        try {
+            event(new ScrapeProgressUpdated($scrapeRun, $productsScraped, $currentPage, $totalProducts));
+        } catch (\Throwable $e) {
+            // Silently ignore broadcast failures
+            Log::channel('scraper')->debug('Failed to broadcast progress', [
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
